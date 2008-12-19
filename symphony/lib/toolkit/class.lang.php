@@ -3,11 +3,12 @@
 	
 	
 	## Provide an interface for translations
-	function __($str){
+	function __($str, $inject = array()){
 		include(LANG . '/lang.' . __LANG__ . '.php');
 		$translated = trim($dictionary[$str]);
 
-		return ($translated ? $translated : $str);
+		if(empty($inject) || !is_array($inject)) return ($translated ? $translated : $str);
+		else return call_user_func_array('sprintf', array(($translated ? $translated : $str)) + $inject);
 	}
 	
 	## Provice an interface for transliterations
