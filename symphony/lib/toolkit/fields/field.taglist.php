@@ -159,7 +159,7 @@
 			
 			parent::displaySettingsPanel($wrapper, $errors);
 
-			$label = Widget::Label('Suggestion List');
+			$label = Widget::Label(__('Suggestion List'));
 			
 			$sectionManager = new SectionManager($this->_engine);
 		    $sections = $sectionManager->fetch(NULL, 'ASC', 'name');
@@ -169,8 +169,8 @@
 				foreach($sections as $section) $field_groups[$section->get('id')] = array('fields' => $section->fetchFields(), 'section' => $section);
 			
 			$options = array(
-				array('none', false, 'None'),
-				array('existing', ($this->get('pre_populate_source') == 'existing'), 'Existing Values'),
+				array('none', false, __('None')),
+				array('existing', ($this->get('pre_populate_source') == 'existing'), __('Existing Values')),
 			);
 			
 			foreach($field_groups as $group){
