@@ -46,6 +46,8 @@
 				
 	}while(list($key, $val) = $additional['proc']->getError());
 
+	$q = $Page->__buildQueryString();
+	if($q) $q = "&$q";
 	foreach($errors_grouped as $group => $data){
 			
 		switch($group){
@@ -53,7 +55,7 @@
 			case 'general':
 			
 				$dl = new XMLElement('dl');
-				$dt = new XMLElement('dt', __('<a href="?debug" title="Show debug view">Compile</a>'));
+				$dt = new XMLElement('dt', __('<a href="?debug%s" title="Show debug view">Compile</a>', array($q)));
 				$dl->appendChild($dt);
 				
 				foreach($data as $e){
@@ -80,7 +82,7 @@
 					$dl = new XMLElement('dl');
 					
 					foreach($errors as $e){
-						$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view for %s">Line %d</a>', array("?debug={$filename}#line-".$e['line'], $filename, $e['line'])));
+						$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view for %s">Line %d</a>', array("?debug={$filename}{$q}#line-".$e['line'], $filename, $e['line'])));
 						$dd = new XMLElement('dd', $e['raw']['message']);
 						$dl->appendChild($dt);
 						$dl->appendChild($dd);
@@ -103,7 +105,7 @@
 					$dl = new XMLElement('dl');
 				
 					foreach($errors as $e){					
-						$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view for %s">Line %d</a>', array("?debug=u-{$filename}#line-".$e['line'], $filename, $e['line'])));
+						$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view for %s">Line %d</a>', array("?debug=u-{$filename}{$q}#line-".$e['line'], $filename, $e['line'])));
 						$dd = new XMLElement('dd', $e['raw']['message']);
 						$dl->appendChild($dt);
 						$dl->appendChild($dd);
@@ -124,7 +126,7 @@
 		
 				foreach($data as $e){
 					$dt = new XMLElement('dt', __('Line %s', array($e['line'])));
-					$dt = new XMLElement('dt', __('<a href="?debug=xml#line-%1$d" title="Show debug view for XML">Line %1$d</a>', array($e['line'])));
+					$dt = new XMLElement('dt', __('<a href="?debug=xml%s#line-%1$d" title="Show debug view for XML">Line %1$d</a>', array($q, $e['line'])));
 					$dd = new XMLElement('dd', $e['raw']['message']);
 					$dl->appendChild($dt);
 					$dl->appendChild($dd);

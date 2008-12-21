@@ -38,6 +38,16 @@
 			parent::generate();			
 			return $this->Html->generate(true);
 		}
+
+		function __buildQueryString($exclude=array()){
+			static $q;
+			if (!is_array($q)) {
+				$q = array();
+				foreach($_GET as $k => $v) $q[$k] = "$k=$v";
+			}
+			$exclude[] = 'page';
+			return implode('&', array_diff_key($q, array_fill_keys($exclude, true)));
+		}
 		
 		function setTitle($val){
 			return $this->addElementToHead(new XMLElement('title', $val));

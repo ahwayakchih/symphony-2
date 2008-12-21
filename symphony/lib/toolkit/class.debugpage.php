@@ -15,9 +15,17 @@
 			
 			$ul->appendChild(new XMLElement('li', __('Debug')));
 
-			$ul->appendChild(self::__appendNavigationItem(__('Profile'), '?profile'));
+			$ul->appendChild(self::__appendNavigationItem(__('Profile'), '?profile'.(($q=$this->__buildQueryString())?"&$q":'')));
 			
 			return $ul;
+		}
+
+		function __buildQueryString(){
+			static $q;
+			if($q === NULL){
+				$q = parent::__buildQueryString(array('debug'));
+			}
+			return $q;
 		}
 		
 		private static function __appendNavigationItem($name, $link, $active=false){
@@ -34,20 +42,22 @@
 		}
 		
 		function __buildJump($page, $xsl, $active_link=NULL, $utilities=NULL){
-			
+			$q = $this->__buildQueryString();
+			if($q) $q = "&$q";
+
 			$ul = new XMLElement('ul', NULL, array('id' => 'jump'));
 			
-			$ul->appendChild(self::__appendNavigationItem(__('Params'), '?debug=params', ($active_link == 'params')));
-			$ul->appendChild(self::__appendNavigationItem(__('XML'), '?debug=xml', ($active_link == 'xml' || is_null($active_link) || strlen(trim($active_link)) == 0)));
+			$ul->appendChild(self::__appendNavigationItem(__('Params'), '?debug=params'.$q, ($active_link == 'params')));
+			$ul->appendChild(self::__appendNavigationItem(__('XML'), '?debug=xml'.$q, ($active_link == 'xml' || is_null($active_link) || strlen(trim($active_link)) == 0)));
 			
 			$filename = basename($page['filelocation']);
-			$li = self::__appendNavigationItem($filename, "?debug={$filename}", ($active_link == $filename));
+			$li = self::__appendNavigationItem($filename, "?debug={$filename}".$q, ($active_link == $filename));
 			$xUtil = $this->__buildUtilityList($utilities, 1, $active_link);
 			if(is_object($xUtil)) $li->appendChild($xUtil);
 			$ul->appendChild($li);	
 
 			
-			$ul->appendChild(self::__appendNavigationItem(__('Result'), '?debug=result', ($active_link == 'result')));
+			$ul->appendChild(self::__appendNavigationItem(__('Result'), '?debug=result'.$q, ($active_link == 'result')));
 
 			return $ul;
 			
@@ -56,12 +66,15 @@
 		function __buildUtilityList($utilities, $level=1, $active_link=NULL){
 			
 			if(!is_array($utilities) || empty($utilities)) return;
-			
+
+			$q = $this->__buildQueryString();
+			if($q) $q = "&$q";
+
 			$ul = new XMLElement('ul');
 			foreach($utilities as $u){
 				
 				$filename = basename($u);
-				$item = self::__appendNavigationItem($filename, "?debug=u-{$filename}", ($active_link == "u-{$filename}"));
+				$item = self::__appendNavigationItem($filename, "?debug=u-{$filename}".$q, ($active_link == "u-{$filename}"));
 				
 				$child_utilities = $this->__findUtilitiesInXSL(@file_get_contents(UTILITIES . '/' . $filename));
 				
@@ -148,7 +161,7 @@
 			$this->setTitle(__('%s &ndash; %s &ndash; %s', array(__('Symphony'), __('Debug'), $page['title'])));
 			
 			$h1 = new XMLElement('h1');
-			$h1->appendChild(Widget::Anchor($page['title'], '.'));
+			$h1->appendChild(Widget::Anchor($page['title'], (($q = $this->__buildQueryString()) ? "?$q" : '.')));
 			$this->Body->appendChild($h1);
 			
 			$this->Body->appendChild($this->__buildNavigation($page));
