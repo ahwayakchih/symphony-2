@@ -45,11 +45,15 @@
 			return false;
 		}
 		
-		public function add($string){
-			$this->_strings[] = $string;
+		public function add($from, $to){
+			$this->_strings[$from] = $string;
+		}
+
+		public function merge($strings){
+			$this->_strings = array_merge($this->_strings, $strings);
 		}
 		
-		public function remove($string){
+		public function remove($from){
 			unset($this->_strings[$string]);
 		}
 	}
@@ -60,18 +64,24 @@
 		private static $_transliterations;		
 		private static $_instance;
 		
-		private function __load($path, $lang){
+		private function __load($path, $lang, $clear=false){
 			
 			$include = sprintf($path, $lang);
 			
 			if(!file_exists($include)){ 
-				throw new Exception(sprintf('Lang file "%s" could not be loaded. Please check path.', $include));
+				if($clear) throw new Exception(sprintf('Lang file "%s" could not be loaded. Please check path.', $include));
+				else return;
 			}
 			
 			require(sprintf($path, $lang));
-			
-			self::$_dictionary = new Dictionary($dictionary);
-			self::$_transliterations = $transliterations;
+
+			if($clear){
+				self::$_dictionary = new Dictionary(array());
+				self::$_transliterations = array();
+			}
+
+			self::$_dictionary->merge($dictionary);
+			self::$_transliterations = array_merge(self::$_transliterations, $transliterations);
 		}
 		
 		public static function init($path, $lang){
@@ -79,10 +89,14 @@
 			if(!(self::$_instance instanceof self)){
 				self::$_instance = new self;
 			}
-			
-			self::__load($path, $lang);
+
+			self::__load($path, $lang, true);
 			
 			return self::$_instance;
+		}
+
+		public static function add($path, $lang){
+			self::__load($path, $lang);
 		}
 
 		public static function Transliterations(){
