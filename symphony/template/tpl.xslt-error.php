@@ -105,7 +105,7 @@
 					$dl = new XMLElement('dl');
 				
 					foreach($errors as $e){					
-						$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view for %s">Line %d</a>', array("?debug=u-{$filename}{$q}#line-".$e['line'], $filename, $e['line'])));
+						$dt = new XMLElement('dt', __('<a href="%1$s" title="Show debug view for %2$s">Line %3$d</a>', array("?debug=u-{$filename}{$q}#line-".$e['line'], $filename, $e['line'])));
 						$dd = new XMLElement('dd', $e['raw']['message']);
 						$dl->appendChild($dt);
 						$dl->appendChild($dd);
@@ -126,7 +126,7 @@
 		
 				foreach($data as $e){
 					$dt = new XMLElement('dt', __('Line %s', array($e['line'])));
-					$dt = new XMLElement('dt', __('<a href="%1$s" title="Show debug view for XML">Line %2$d</a>', array('?debug=xml'.$q.'#line-'.$e['line'], $e['line'])));
+					$dt = new XMLElement('dt', __('<a href="%1$s" title="Show debug view for %2$s">Line %3$d</a>', array('?debug=xml'.$q.'#line-'.$e['line'], 'XML', $e['line'])));
 					$dd = new XMLElement('dd', $e['raw']['message']);
 					$dl->appendChild($dt);
 					$dl->appendChild($dd);

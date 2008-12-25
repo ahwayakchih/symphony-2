@@ -602,7 +602,7 @@
 
 			$this->setPageType('form');
 			$this->Form->setAttribute('enctype', 'multipart/form-data');
-			$this->setTitle(__('%1$s &ndash; %2$s &ndash; %3%s', array(__('Symphony'), $section->get('name'), $title)));
+			$this->setTitle(__('%1$s &ndash; %2$s &ndash; %3$s', array(__('Symphony'), $section->get('name'), $title)));
 			$this->appendSubheading($title);
 			$this->Form->appendChild(Widget::Input('MAX_FILE_SIZE', $this->_Parent->Configuration->get('max_upload_size', 'admin'), 'hidden'));
 			

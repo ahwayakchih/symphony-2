@@ -126,7 +126,7 @@
 						break;
 						
 					case 'created':
-						$this->pageAlert(__('%1$s created successfully. <a href="%2%s">Create another?</a>', array('Page', URL . '/symphony/blueprints/pages/new/')), AdministrationPage::PAGE_ALERT_NOTICE);
+						$this->pageAlert(__('%1$s created successfully. <a href="%2$s">Create another?</a>', array('Page', URL . '/symphony/blueprints/pages/new/')), AdministrationPage::PAGE_ALERT_NOTICE);
 						break;
 					
 				}

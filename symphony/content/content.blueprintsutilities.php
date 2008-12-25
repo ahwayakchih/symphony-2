@@ -66,7 +66,7 @@
 				}
 			}
 			
-			$this->setTitle(__(($this->_context[0] == 'new' ? '%1$s &ndash; %2$s' : '%1$s &ndash; %2$s &ndash; %3%s'), array(__('Symphony'), __('Utilities'), $filename)));
+			$this->setTitle(__(($this->_context[0] == 'new' ? '%1$s &ndash; %2$s' : '%1$s &ndash; %2$s &ndash; %3$s'), array(__('Symphony'), __('Utilities'), $filename)));
 			$this->appendSubheading(($this->_context[0] == 'new' ? __('Untitled') : $filename));
 
 			if(!empty($_POST)) $fields = $_POST['fields'];
