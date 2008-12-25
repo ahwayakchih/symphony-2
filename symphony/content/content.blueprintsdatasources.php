@@ -25,11 +25,11 @@
 				switch($this->_context[2]){
 					
 					case 'saved':
-						$this->pageAlert(__('%s updated successfully. <a href="%s/symphony/%s">Create another?</a>', array(__('Data source'), URL, 'blueprints/datasources/new/')), AdministrationPage::PAGE_ALERT_NOTICE);
+						$this->pageAlert(__('%1$s updated successfully. <a href="%2$s">Create another?</a>', array(__('Data source'), URL . '/symphony/blueprints/datasources/new/')), AdministrationPage::PAGE_ALERT_NOTICE);
 						break;
 						
 					case 'created':
-						$this->pageAlert(__('%s created successfully. <a href="%s/symphony/%s">Create another?</a>', array(__('Data source'), URL, 'blueprints/datasources/new/')), AdministrationPage::PAGE_ALERT_NOTICE);
+						$this->pageAlert(__('%1$s created successfully. <a href="%2$s">Create another?</a>', array(__('Data source'), URL . '/symphony/blueprints/datasources/new/')), AdministrationPage::PAGE_ALERT_NOTICE);
 						break;
 					
 				}
@@ -126,7 +126,7 @@
 			}
 			
 			$this->setPageType('form');	
-			$this->setTitle(__(($isEditing ? '%s &ndash; %s &ndash; %s' : '%s &ndash; %s'), array(__('Symphony'), __('Data Sources'), $about['name'])));
+			$this->setTitle(__(($isEditing ? '%1$s &ndash; %2$s &ndash; %3$s' : '%1$s &ndash; %2$s'), array(__('Symphony'), __('Data Sources'), $about['name'])));
 			$this->appendSubheading(($isEditing ? $about['name'] : __('Untitled')));
 			
 			$fieldset = new XMLElement('fieldset');
@@ -656,7 +656,7 @@
 			$datasource = $DSManager->create($this->_context[1]);	
 			$about = $datasource->about();
 
-			$this->setTitle(__('%s &ndash; %s &ndash; %s', array(__('Symphony'), __('Data Source'), $about['name'])));
+			$this->setTitle(__('%1$s &ndash; %2$s &ndash; %3$s', array(__('Symphony'), __('Data Source'), $about['name'])));
 			$this->appendSubheading($about['name']);
 			$this->Form->setAttribute('id', 'controller');
 

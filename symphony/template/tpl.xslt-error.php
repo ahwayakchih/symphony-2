@@ -16,7 +16,7 @@
 	$Page->addHeaderToPage('Content-Type', 'text/html; charset=UTF-8');
 	$Page->addHeaderToPage('Symphony-Error-Type', 'xslt');
 	
-	$Page->setTitle(__('%s &ndash; %s', array(__('Symphony'), __('XSLT Processing Error'))));
+	$Page->setTitle(__('%1$s &ndash; %2$s', array(__('Symphony'), __('XSLT Processing Error'))));
 
 	$div = new XMLElement('div', NULL, array('id' => 'description'));
 	$div->appendChild(new XMLElement('h1', __('XSLT Processing Error')));
@@ -55,7 +55,7 @@
 			case 'general':
 			
 				$dl = new XMLElement('dl');
-				$dt = new XMLElement('dt', __('<a href="?debug%s" title="Show debug view">Compile</a>', array($q)));
+				$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view">Compile</a>', array('?debug'.$q)));
 				$dl->appendChild($dt);
 				
 				foreach($data as $e){
@@ -82,7 +82,7 @@
 					$dl = new XMLElement('dl');
 					
 					foreach($errors as $e){
-						$dt = new XMLElement('dt', __('<a href="%s" title="Show debug view for %s">Line %d</a>', array("?debug={$filename}{$q}#line-".$e['line'], $filename, $e['line'])));
+						$dt = new XMLElement('dt', __('<a href="%1$s" title="Show debug view for %2$s">Line %3$d</a>', array("?debug={$filename}{$q}#line-".$e['line'], $filename, $e['line'])));
 						$dd = new XMLElement('dd', $e['raw']['message']);
 						$dl->appendChild($dt);
 						$dl->appendChild($dd);
@@ -126,7 +126,7 @@
 		
 				foreach($data as $e){
 					$dt = new XMLElement('dt', __('Line %s', array($e['line'])));
-					$dt = new XMLElement('dt', __('<a href="?debug=xml%s#line-%1$d" title="Show debug view for XML">Line %1$d</a>', array($q, $e['line'])));
+					$dt = new XMLElement('dt', __('<a href="%1$s" title="Show debug view for XML">Line %2$d</a>', array('?debug=xml'.$q.'#line-'.$e['line'], $e['line'])));
 					$dd = new XMLElement('dd', $e['raw']['message']);
 					$dl->appendChild($dt);
 					$dl->appendChild($dd);

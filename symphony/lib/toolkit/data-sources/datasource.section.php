@@ -103,7 +103,7 @@
 			
 			if($field_id != 'id' && !($fieldPool[$field_id] instanceof Field)){
 				throw new Exception(
-					__('Error creating field object with id %d, for filtering in data source "%s". Check this field exists.', 
+					__('Error creating field object with id %1$d, for filtering in data source "%2$s". Check this field exists.', 
 							$field_id, 
 							$this->dsParamROOTELEMENT)
 				);

@@ -269,11 +269,11 @@
 				switch($data['error']){
 
 					case UPLOAD_ERR_INI_SIZE:
-						$message = __("File chosen in '%s' exceeds the maximum allowed upload size of %s specified by your host.", array($this->get('label'), (is_numeric(ini_get('upload_max_filesize')) ? General::formatFilesize(ini_get('upload_max_filesize')) : ini_get('upload_max_filesize'))));
+						$message = __("File chosen in '%1\$s' exceeds the maximum allowed upload size of %2\$s specified by your host.", array($this->get('label'), (is_numeric(ini_get('upload_max_filesize')) ? General::formatFilesize(ini_get('upload_max_filesize')) : ini_get('upload_max_filesize'))));
 						break;
 						
 					case UPLOAD_ERR_FORM_SIZE:
-						$message = __("File chosen in '%s' exceeds the maximum allowed upload size of %s, specified by Symphony.", array($this->get('label'), General::formatFilesize($this->_engine->Configuration->get('max_upload_size', 'admin'))));
+						$message = __("File chosen in '%1\$s' exceeds the maximum allowed upload size of %2\$s, specified by Symphony.", array($this->get('label'), General::formatFilesize($this->_engine->Configuration->get('max_upload_size', 'admin'))));
 						break;
 
 					case UPLOAD_ERR_PARTIAL:
@@ -321,7 +321,7 @@
 			}
 			
 			if(($existing_file != $new_file) && file_exists($new_file)){
-				$message = __('A file with the name %s already exists in %s. Please rename the file first, or choose another.', array($data['name'], $this->get('destination')));
+				$message = __('A file with the name %1$s already exists in %2$s. Please rename the file first, or choose another.', array($data['name'], $this->get('destination')));
 				return self::__INVALID_FIELDS__;				
 			}
 			
@@ -362,7 +362,7 @@
 
 			if(!General::uploadFile($abs_path, $data['name'], $data['tmp_name'], $this->_engine->Configuration->get('write_mode', 'file'))){
 				
-				$message = __("There was an error while trying to upload the file <code>%s</code> to the target directory <code>%s</code>.", array($data['name'], 'workspace/'.$rel_path));
+				$message = __("There was an error while trying to upload the file <code>%1\$s</code> to the target directory <code>%2\$s</code>.", array($data['name'], 'workspace/'.$rel_path));
 				$status = self::__ERROR_CUSTOM__;
 				return;
 			}

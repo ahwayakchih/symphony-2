@@ -183,7 +183,7 @@
 
 				$edit_link = URL.'/symphony/publish/'.$section->get('handle').'/edit/'.$entry->get('id').'/';
 
-				$body = __('Dear <!-- RECIPIENT NAME -->,') . General::CRLF . __('This is a courtesy email to notify you that an entry was created on the %s section. You can edit the entry by going to: %s', array($section->get('name'), $edit_link)). General::CRLF . General::CRLF;
+				$body = __('Dear <!-- RECIPIENT NAME -->,') . General::CRLF . __('This is a courtesy email to notify you that an entry was created on the %1$s section. You can edit the entry by going to: %2$s', array($section->get('name'), $edit_link)). General::CRLF . General::CRLF;
 
 				if(is_array($fields['body'])){
 					foreach($fields['body'] as $field_handle => $value){

@@ -9,7 +9,7 @@
 		function __construct(&$parent){
 			parent::__construct($parent);
 			$this->setPageType('forms');
-			$this->setTitle(__('%s &ndash; %s', array(__('Symphony'), __('Components'))));
+			$this->setTitle(__('%1$s &ndash; %2$s', array(__('Symphony'), __('Components'))));
 		}
 
 		function view(){

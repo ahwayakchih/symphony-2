@@ -148,7 +148,7 @@
 			}
 			
 			if(!General::validateXML(General::sanitize($data), $errors, false, new XsltProcess)){
-				$message = __("'%s' contains invalid XML. The following error was returned: <code>%s</code>", array($this->get('label'), $errors[0]['message']));
+				$message = __("'%1\$s' contains invalid XML. The following error was returned: <code>%1\$s</code>", array($this->get('label'), $errors[0]['message']));
 				return self::__INVALID_FIELDS__;
 			}
 			

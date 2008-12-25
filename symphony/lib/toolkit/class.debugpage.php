@@ -153,7 +153,7 @@
 			$this->addElementToHead(new XMLElement('!--[if IE]><link rel="stylesheet" href="'.URL.'/symphony/assets/legacy.css" type="text/css"><![endif]--'), 50);
 			$this->addScriptToHead(URL . '/symphony/assets/admin.js', 60);
 			
-			$this->setTitle(__('%s &ndash; %s &ndash; %s', array(__('Symphony'), __('Debug'), $page['title'])));
+			$this->setTitle(__('%1$s &ndash; %2$s &ndash; %3$s', array(__('Symphony'), __('Debug'), $page['title'])));
 			
 			$h1 = new XMLElement('h1');
 			$h1->appendChild(Widget::Anchor($page['title'], ($this->_query_string ? '?'.trim($this->_query_string, '&') : '.')));
