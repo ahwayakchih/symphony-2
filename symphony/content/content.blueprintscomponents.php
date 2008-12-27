@@ -14,7 +14,7 @@
 
 		function view(){
 		
-			$this->appendSubheading('Components');
+			$this->appendSubheading(__('Components'));
 					
 			$utilities = General::listStructure(UTILITIES, array('xsl'), false, 'asc', UTILITIES);
 			$utilities = $utilities['filelist'];
