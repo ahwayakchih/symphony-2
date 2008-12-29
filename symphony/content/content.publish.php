@@ -129,7 +129,7 @@
 						
 						else{
 							$link = $this->_Parent->getCurrentPageURL() . '?pg='.$current_page.'&amp;sort='.$column->get('id').'&amp;order=asc'.($filter ? "&amp;filter=$field_handle:$filter_value" : '');							
-							$anchor = Widget::Anchor($label, $link, __('Sort by ascending %s', array(strtolower($column->get('label')))));
+							$anchor = Widget::Anchor($label, $link, __('Sort by %1$s %2$s', array(__('ascending'), strtolower($column->get('label')))));
 						}
 						
 						$aTableHead[] = array($anchor, 'col');

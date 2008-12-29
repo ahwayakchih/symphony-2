@@ -37,7 +37,7 @@
 			
 			if (!is_array($pages) or empty($pages)) {
 				$aTableBody = array(Widget::TableRow(array(
-					Widget::TableData(__('None Found.'), 'inactive', null, count($aTableHead))
+					Widget::TableData(__('None found.'), 'inactive', null, count($aTableHead))
 				)));
 				
 			}

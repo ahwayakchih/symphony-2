@@ -373,9 +373,9 @@
 			$label = Widget::Label(__('Sort Order'));
 			
 			$options = array(
-				array('asc', ('asc' == $fields['order']), __('Ascending')),
-				array('desc', ('desc' == $fields['order']), __('Descending')),
-				array('rand', ('rand' == $fields['order']), __('Random')),
+				array('asc', ('asc' == $fields['order']), __('ascending')),
+				array('desc', ('desc' == $fields['order']), __('descending')),
+				array('rand', ('rand' == $fields['order']), __('random')),
 			);
 			
 			$label->appendChild(Widget::Select('fields[order]', $options));
@@ -461,7 +461,7 @@
 			$label->appendChild(Widget::Select('fields[param]', $options, array('class' => 'filtered')));
 			$li->appendChild($label);
 
-			$p = new XMLElement('p', __('The parameter <code id="output-param-name">$ds-%s</code> will be created with this field\'s value for XSLT or other data sources to use.', array(($this->_context[0] == 'edit' ? $existing->dsParamROOTELEMENT : __('untitled')))));
+			$p = new XMLElement('p', __('The parameter <code id="output-param-name">$ds-%s</code> will be created with this field\'s value for XSLT or other data sources to use.', array(($this->_context[0] == 'edit' ? $existing->dsParamROOTELEMENT : __('Untitled')))));
 			$p->setAttribute('class', 'help');
 			$li->appendChild($p);
 			
