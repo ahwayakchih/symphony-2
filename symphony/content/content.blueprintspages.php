@@ -28,8 +28,8 @@
 			
 			$aTableHead = array(
 				array(__('Title'), 'col'),
-				array(__('<acronym title="Univeral Resource Locator">URL</acronym>'), 'col'),
-				array(__('<acronym title="Univeral Resource Locator">URL</acronym> Parameters'), 'col'),
+				array(__('<acronym title="Universal Resource Locator">URL</acronym>'), 'col'),
+				array(__('<acronym title="Universal Resource Locator">URL</acronym> Parameters'), 'col'),
 				array(__('Type'), 'col')
 			);	
 			
