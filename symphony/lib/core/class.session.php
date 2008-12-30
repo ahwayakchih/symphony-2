@@ -25,7 +25,11 @@
 					self::$_db = &$Admin->Database;
 				}
 				else {
-					return false;
+					$temp = Administration::instance();
+					if (!$temp->Database->isConnected()) return false;
+
+					self::$_db = $temp->Database;
+					unset($temp);
 				}
 
 				self::$_cache = new Cacheable(self::$_db);
