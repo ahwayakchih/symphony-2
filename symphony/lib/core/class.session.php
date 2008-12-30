@@ -25,10 +25,19 @@
 					self::$_db = &$Admin->Database;
 				}
 				else {
-					$temp = Administration::instance();
+					// Check which class has been declared and use that one
+					// (Symphony declares only one of them at a time - no point in using both)
+					$temp = NULL;
+					if (class_exists('Frontend'))
+						$temp = Frontend::instance();
+					else if (class_exists('Administration'))
+						$temp = Administration::instance();
+					else
+						return false;
+
 					if (!$temp->Database->isConnected()) return false;
 
-					self::$_db = $temp->Database;
+					self::$_db = &$temp->Database;
 					unset($temp);
 				}
 
