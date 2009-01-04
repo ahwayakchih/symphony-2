@@ -46,14 +46,14 @@
 		}
 		
 		public function add($from, $to){
-			$this->_strings[$from] = $string;
+			$this->_strings[$from] = $to;
 		}
 
 		public function merge($strings){
 			$this->_strings = array_merge($this->_strings, $strings);
 		}
 		
-		public function remove($from){
+		public function remove($string){
 			unset($this->_strings[$string]);
 		}
 	}
@@ -69,7 +69,7 @@
 			$include = sprintf($path, $lang);
 			
 			if(!file_exists($include)){ 
-				if($clear) throw new Exception(sprintf('Lang file "%s" could not be loaded. Please check path.', $include));
+				if((bool)$clear === true) throw new Exception(sprintf('Lang file "%s" could not be loaded. Please check path.', $include));
 				else return;
 			}
 			
