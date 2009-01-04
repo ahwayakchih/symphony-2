@@ -69,13 +69,18 @@
 			$include = sprintf($path, $lang);
 			
 			if(!file_exists($include)){ 
-				if((bool)$clear === true) throw new Exception(sprintf('Lang file "%s" could not be loaded. Please check path.', $include));
+				if((bool)$clear === true) {
+					## If there is no main language file, we have to init Dictionary or ugly errors will happen
+					if(!(self::$_dictionary instanceof Dictionary))
+						self::$_dictionary = new Dictionary(array());
+					throw new Exception(sprintf('Lang file "%s" could not be loaded. Please check path.', $include));
+				}
 				else return;
 			}
 			
 			require(sprintf($path, $lang));
 
-			if($clear){
+			if((bool)$clear === true){
 				self::$_dictionary = new Dictionary(array());
 				self::$_transliterations = array();
 			}
