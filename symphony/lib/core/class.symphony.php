@@ -287,12 +287,12 @@
 			
 					if($log) $this->Log->pushToLog("$errno - ".strip_tags((is_object($errstr) ? $errstr->generate() : $errstr)).($errfile ? " in file $errfile" : '') . ($errline ? " on line $errline" : ''), Log::kERROR, true);
 			
-					if(!is_file(TEMPLATE . "/tpl.$template.php")) die("<h1>Symphony Fatal Error</h1><p>$message</p>");
+					if(!is_object($errstr) && $errline) $errstr = "Line $errline &ndash; $errstr";
+			
+					if(!is_file(TEMPLATE . "/tpl.$template.php")) die("<h1>Symphony Fatal Error</h1><p>$errstr</p>");
 			
 					$heading = ($heading ? $heading : 'Symphony System Error');
 					
-					if(!is_object($errstr) && $errline) $errstr = "Line $errline &ndash; $errstr";
-			
 					include(TEMPLATE . "/tpl.$template.php");
 					
 					break;
