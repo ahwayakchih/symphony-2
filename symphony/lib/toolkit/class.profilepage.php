@@ -10,7 +10,7 @@
 			parent::__construct();
 
 			$this->_query_string = parent::__buildQueryString(array('profile'));
-			if(!empty($this->_query_string)) $this->_query_string = '&'.$this->_query_string;
+			if(!empty($this->_query_string)) $this->_query_string = '&amp;'.General::sanitize($this->_query_string);
 		}
 		
 		function __buildNavigation($page){		

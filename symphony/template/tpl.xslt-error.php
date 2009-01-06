@@ -46,7 +46,7 @@
 				
 	}while(list($key, $val) = $additional['proc']->getError());
 
-	$query_string = $Page->__buildQueryString();
+	$query_string = General::sanitize($Page->__buildQueryString());
 	if(strlen(trim($query_string)) > 0) $query_string = "&amp;{$query_string}";
 	foreach($errors_grouped as $group => $data){
 			
