@@ -43,7 +43,7 @@
 			static $q;
 			if (!is_array($q)) {
 				$q = array();
-				foreach($_GET as $k => $v) $q[$k] = "$k=$v";
+				foreach($_GET as $k => $v) $q[$k] = "$k=$v"; // TODO: this does not handle things like: &array[one]=1&array[two]=2
 			}
 			$exclude[] = 'page';
 			return implode('&', array_diff_key($q, array_fill_keys($exclude, true)));
