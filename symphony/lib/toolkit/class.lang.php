@@ -219,5 +219,23 @@
 			## return list sorted by descending priority, e.g., array('en-gb','en');
 			return array_keys($languages);
 		}
+
+		/***
+
+		Method: getAvailableLanguages
+		Description: gets languages available in symphony/lib/lang directory
+		Return: array of language codes
+
+		***/
+		public static function getAvailableLanguages() {
+			$languages = array();
+			$iterator = new DirectoryIterator('./symphony/lib/lang');
+			foreach($iterator as $file){
+				if(!$file->isDot() && preg_match('/lang\.(\w+(-\w+)?)\.php$/', $file->getFilename(), $matches)){
+					$languages[$matches[1]] = $file;
+				}
+			}
+			return array_keys($languages);
+		}
 	}
 	

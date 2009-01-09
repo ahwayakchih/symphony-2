@@ -1026,7 +1026,7 @@
 					$conf['settings']['admin']['max_upload_size'] = '5242880';
 					$conf['settings']['symphony']['pagination_maximum_rows'] = '17';
 					$conf['settings']['symphony']['allow_page_subscription'] = '1';
-					$conf['settings']['symphony']['lang'] = 'en';
+					$conf['settings']['symphony']['lang'] = (defined('__LANG__') ? __LANG__ : 'en');
 					$conf['settings']['log']['archive'] = '1';
 					$conf['settings']['log']['maxsize'] = '102400';
 					$conf['settings']['general']['useragent'] = 'Symphony/2000';
@@ -1044,7 +1044,7 @@
 		        $conf['settings']['symphony']['build'] = kBUILD;
 				$conf['settings']['symphony']['cookie_prefix'] = 'sym-';
 		        $conf['settings']['general']['useragent'] = 'Symphony/' . kBUILD;
-				$conf['settings']['general']['sitename'] = (strlen(trim($config['general']['sitename'])) > 0 ? $config['general']['sitename'] : 'Website Name');		
+				$conf['settings']['general']['sitename'] = (strlen(trim($config['general']['sitename'])) > 0 ? $config['general']['sitename'] : __('Website Name'));
 		        $conf['settings']['file']['write_mode'] = $config['permission']['file'];
 		        $conf['settings']['directory']['write_mode'] = $config['permission']['directory'];
 		        $conf['settings']['database']['host'] = $database['host'];
@@ -1372,6 +1372,12 @@ IndexIgnore *
 	$notices = array(
 		'existing-workspace' => __('An existing <code>/workspace</code> directory was found at this location. Symphony will use this workspace.')
 	);
+
+	$languages = array();
+	foreach(Lang::getAvailableLanguages() as $lang){
+		$languages[] = '<a href="?lang='.$lang.'">'.$lang.'</a>';
+	}
+	$languages = implode(', ', $languages);
 	
 	Class Display{
 		
@@ -1379,9 +1385,10 @@ IndexIgnore *
 		
 			global $warnings;
 			global $notices;
+			global $languages;
 		
 			$Form = new XMLElement('form');
-			$Form->setAttribute('action', kINSTALL_FILENAME);
+			$Form->setAttribute('action', kINSTALL_FILENAME.($_GET['lang'] ? '?lang='.$_GET['lang'] : ''));
 			$Form->setAttribute('method', 'post');
 		
 			/** 
@@ -1677,7 +1684,8 @@ IndexIgnore *
 		
 
 			$Page->setTemplateVar('title', __('Install Symphony'));
-			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));		
+			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));
+			$Page->setTemplateVar('languages', $languages);
 		}
 	
 		function requirements(&$Page, &$Contents){
@@ -1714,6 +1722,9 @@ IndexIgnore *
 		
 			$Page->setTemplateVar('title', __('Missing Requirements'));
 			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));
+
+			global $languages;
+			$Page->setTemplateVar('languages', $languages);
 		}
 
 		function uptodate(&$Page, &$Contents){
@@ -1722,6 +1733,9 @@ IndexIgnore *
 
 			$Page->setTemplateVar('title', __('Update Symphony'));
 			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));
+
+			global $languages;
+			$Page->setTemplateVar('languages', $languages);
 		}
 
 		function incorrectVersion(&$Page, &$Contents){
@@ -1730,6 +1744,9 @@ IndexIgnore *
 
 			$Page->setTemplateVar('title', __('Update Symphony'));
 			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));
+
+			global $languages;
+			$Page->setTemplateVar('languages', $languages);
 		}
 
 		function failure(&$Page, &$Contents){
@@ -1738,8 +1755,10 @@ IndexIgnore *
 			$Contents->appendChild(new XMLElement('p', __('An error occurred during installation. You can view you log <a href="install-log.txt">here</a> for more details.')));
 
 			$Page->setTemplateVar('title', __('Installation Failure'));
-			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));
-					
+			$Page->setTemplateVar('tagline', __('Version %s', array(kVERSION)));		
+
+			global $languages;
+			$Page->setTemplateVar('languages', $languages);
 		}
 
 	}
@@ -1752,7 +1771,7 @@ IndexIgnore *
 	$Page->setFooter(kFOOTER);
 
 	$Contents =& new XMLElement('body');
-	$Contents->appendChild(new XMLElement('h1', '<!-- TITLE --> <em><!-- TAGLINE --></em>'));
+	$Contents->appendChild(new XMLElement('h1', '<!-- TITLE --> <em><!-- TAGLINE --></em> <em><!-- LANGUAGES --></em>'));
 
 	if(defined('__IS_UPDATE__') && __IS_UPDATE__)
 		$Page->setPage((kCURRENT_BUILD < '1602' ? 'incorrectVersion' : 'update'));

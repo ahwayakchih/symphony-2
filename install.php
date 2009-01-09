@@ -43,13 +43,11 @@
 
 		## none of browser accepted languages is available, get first available
 		if($lang === NULL){
-			$iterator = new DirectoryIterator('./symphony/lib/lang');
-			foreach($iterator as $file){
-				if($file->isDot()) continue;
-				if(preg_match('/lang\.(\w+(-\w+)?)\.php$/', $file->getFilename(), $matches)){
-					$lang = $matches[1];
-					break;
-				}
+			## default to English
+			if(file_exists('./symphony/lib/lang/lang.en.php')) $lang = 'en';
+			else{
+				$l = Lang::getAvailableLanguages();
+				if(is_array($l) && count($l) > 0) $lang = $l[0];
 			}
 		}
 
@@ -158,10 +156,10 @@
 		$conf['admin']['max_upload_size'] = '5242880';
 		$conf['symphony']['pagination_maximum_rows'] = '17';
 		$conf['symphony']['allow_page_subscription'] = '1';
-		$conf['symphony']['lang'] = 'en';
+		$conf['symphony']['lang'] = (defined('__LANG__') ? __LANG__ : 'en');
 		$conf['log']['archive'] = '1';
 		$conf['log']['maxsize'] = '102400';
-		$conf['general']['sitename'] = 'Symphony Content Management System';
+		$conf['general']['sitename'] = __('Symphony Content Management System');
 		$conf['image']['cache'] = '1';
 		$conf['image']['quality'] = '90';
 		$conf['database']['driver'] = 'mysql';
