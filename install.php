@@ -24,7 +24,47 @@
 		phpinfo(); 
 		exit();
 	}
-	
+
+	function setLanguage() {
+		require_once('symphony/lib/toolkit/class.lang.php');
+		$lang = NULL;
+
+		if(!empty($_REQUEST['lang'])){
+			$l = preg_replace('/[^a-zA-Z\-]/', '', $_REQUEST['lang']);
+			if(file_exists("./symphony/lib/lang/lang.{$l}.php")) $lang = $l;
+		}
+
+		if($lang === NULL){
+			foreach(Lang::getBrowserLanguages() as $l){
+				if(file_exists("./symphony/lib/lang/lang.{$l}.php")) $lang = $l;
+				break;
+			}
+		}
+
+		## none of browser accepted languages is available, get first available
+		if($lang === NULL){
+			$iterator = new DirectoryIterator('./symphony/lib/lang');
+			foreach($iterator as $file){
+				if($file->isDot()) continue;
+				if(preg_match('/lang\.(\w+(-\w+)?)\.php$/', $file->getFilename(), $matches)){
+					$lang = $matches[1];
+					break;
+				}
+			}
+		}
+
+		if($lang === NULL) return NULL;
+
+		try{
+			Lang::init('./symphony/lib/lang/lang.%s.php', $lang);
+		}
+		catch(Exception $s){
+			return NULL;
+		}
+
+		define('__LANG__', $lang);
+		return $lang;
+	}
 	
 	/***********************
 	         TESTS
@@ -59,6 +99,30 @@
 		die($code);
 		
 	}
+
+	// Check and set language
+	if(setLanguage() === NULL){
+
+		$code = '<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<title>Outstanding Requirements</title>
+		<link rel="stylesheet" type="text/css" href="'.kINSTALL_ASSET_LOCATION.'/main.css"/>
+		<script type="text/javascript" src="'.kINSTALL_ASSET_LOCATION.'/main.js"></script>
+	</head>
+		<body>
+			<h1>Install Symphony <em>Version '.kVERSION.'</em></h1>
+			<h2>Outstanding Requirements</h2>
+			<p>Symphony needs at least one language file to be present before installation can proceed.</p>
+
+		</body>
+
+</html>';
+		
+		die($code);
+
+	}
 	
 	// Check if Symphony is already installed
 	
@@ -68,14 +132,14 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 	<head>
-		<title>Existing Installation</title>
+		<title>'.__('Existing Installation').'</title>
 		<link rel="stylesheet" type="text/css" href="'.kINSTALL_ASSET_LOCATION.'/main.css"/>
 		<script type="text/javascript" src="'.kINSTALL_ASSET_LOCATION.'/main.js"></script>
 	</head>
 		<body>
-			<h1>Install Symphony <em>Version '.kVERSION.'</em></h1>
-			<h2>Existing Installation</h2>
-			<p>It appears that Symphony has already been installed at this location.</p>
+			<h1>'.__('Install Symphony <em>Version %s</em>', array(kVERSION)).'</h1>
+			<h2>'.__('Existing Installation').'</h2>
+			<p>'.__('It appears that Symphony has already been installed at this location.').'</p>
 
 		</body>
 

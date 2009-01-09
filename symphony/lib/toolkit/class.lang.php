@@ -193,5 +193,31 @@
 
 		}
 		
+		/***
+
+		Method: getBrowserLanguages
+		Description: gets languages accepted by browser and returns array of them (sorted by priority when possible)
+		Return: array of language codes
+
+		***/
+		public static function getBrowserLanguages() {
+			if(strlen(trim($_SERVER['HTTP_ACCEPT_LANGUAGE'])) < 1) return array();
+
+			if(!preg_match_all('/(\w+(?:-\w+)?,?)+(?:;q=(?:\d+\.\d+))?/', preg_replace('/\s+/', '', $_SERVER['HTTP_ACCEPT_LANGUAGE']), $matches)) return array();
+
+			$status=1.0;
+			$languages = array();
+			foreach($matches[0] as $def){
+				list($list, $q) = explode(';q=', $def);
+				if(!empty($q)) $status=floatval($q);
+				$list = explode(',', $list);
+				foreach($list as $lang){
+					$languages[$lang] = $status;
+				}
+			}
+			arsort($languages);
+			## return list sorted by descending priority, e.g., array('en-gb','en');
+			return array_keys($languages);
+		}
 	}
 	
