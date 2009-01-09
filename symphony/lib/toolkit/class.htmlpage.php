@@ -45,7 +45,7 @@
 				$q = array();
 				foreach($_GET as $k => $v){
 					if (is_array($v)) $q[$k] = $this->__flattenQueryArray($v, $k);
-					else $q[$k] = "$k=$v";
+					else $q[$k] = "{$k}={$v}";
 				}
 			}
 			$exclude[] = 'page';
