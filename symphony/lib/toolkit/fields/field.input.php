@@ -142,17 +142,17 @@
 			$handle = Lang::createHandle($data);
 			
 			if($this->get('required') == 'yes' && strlen($data) == 0){
-				$message = __("'%s' is a required field.", array($this->get('label')));
+				$message = "'". $this->get('label')."' is a required field.";
 				return self::__MISSING_FIELDS__;
 			}	
 			
 			if(!$this->__applyValidationRules($data)){
-				$message = __("'%s' contains invalid data. Please check the contents.", array($this->get('label')));
+				$message = "'". $this->get('label')."' contains invalid data. Please check the contents.";
 				return self::__INVALID_FIELDS__;	
 			}
 			
 			if(!General::validateXML(General::sanitize($data), $errors, false, new XsltProcess)){
-				$message = __('"%1$s" contains invalid XML. The following error was returned: <code>%2$s</code>', array($this->get('label'), $errors[0]['message']));
+				$message = "'". $this->get('label')."' contains invalid XML. The following error was returned: <code>" . $errors[0]['message'] . '</code>';
 				return self::__INVALID_FIELDS__;
 			}
 			

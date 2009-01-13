@@ -64,7 +64,7 @@
 			$message = NULL;
 
 			if(!self::__isValidDateString($data)){
-				$message = __("The date specified in '%s' is invalid.", array($this->get('label')));
+				$message = "The date specified in '". $this->get('label')."' is invalid.";
 				return self::__INVALID_FIELDS__;
 			}
 			
@@ -345,7 +345,7 @@
 			$label = Widget::Label();
 			$input = Widget::Input('fields['.$this->get('sortorder').'][pre_populate]', 'yes', 'checkbox');
 			if($this->get('pre_populate') == 'yes') $input->setAttribute('checked', 'checked');
-			$label->setValue(__('%s Pre-populate this field with today\'s date', array($input->generate())));
+			$label->setValue($input->generate() . ' Pre-populate this field with today\'s date');
 			$wrapper->appendChild($label);		
 			
 			/*								

@@ -265,7 +265,7 @@
 			if(!is_array($errors)) $errors = array();
 
 			if($this->get('static_options') == '' && ($this->get('dynamic_options') == '' || $this->get('dynamic_options') == 'none')) 
-				$errors['dynamic_options'] = __('At least one source must be specified, dynamic or static.');
+				$errors['dynamic_options'] = 'At least one source must be specified, dynamic or static.';
 
 			parent::checkFields($errors, $checkForDuplicates);
 			
@@ -281,13 +281,13 @@
 
 			$div = new XMLElement('div', NULL, array('class' => 'group'));
 			
-			$label = Widget::Label(__('Static Options <i>Optional</i>'));
+			$label = Widget::Label('Static Options <i>Optional</i> ');
 			$input = Widget::Input('fields['.$this->get('sortorder').'][static_options]', General::sanitize($this->get('static_options')));
 			$label->appendChild($input);
 			$div->appendChild($label);
 			
 			
-			$label = Widget::Label(__('Dynamic Options'));
+			$label = Widget::Label('Dynamic Options');
 			
 			$sectionManager = new SectionManager($this->_engine);
 		    $sections = $sectionManager->fetch(NULL, 'ASC', 'name');
@@ -297,7 +297,7 @@
 				foreach($sections as $section) $field_groups[$section->get('id')] = array('fields' => $section->fetchFields(), 'section' => $section);
 			
 			$options = array(
-				array('', false, __('None')),
+				array('', false, 'None'),
 			);
 			
 			foreach($field_groups as $group){
@@ -322,7 +322,7 @@
 			$label = Widget::Label();
 			$input = Widget::Input('fields['.$this->get('sortorder').'][allow_multiple_selection]', 'yes', 'checkbox');
 			if($this->get('allow_multiple_selection') == 'yes') $input->setAttribute('checked', 'checked');			
-			$label->setValue(__('%s Allow selection of multiple options', array($input->generate())));
+			$label->setValue($input->generate() . ' Allow selection of multiple options');
 			$wrapper->appendChild($label);
 			
 			$this->appendShowColumnCheckbox($wrapper);
