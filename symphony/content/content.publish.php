@@ -424,10 +424,7 @@
 
 				if(is_array($main_fields) && !empty($main_fields)){
 					foreach($main_fields as $field){
-						$div = new XMLElement('div', NULL, array('class' => 'field '.$field->handle().($field->get('required') == 'yes' ? ' required' : '')));
-						$field->displayPublishPanel($div, $entry->getData($field->get('id')), (isset($this->_errors[$field->get('id')]) ? $this->_errors[$field->get('id')] : NULL));	
-						$primary->appendChild($div);
-					}
+						$field->displayPublishPanel($primary, $entry->getData($field->get('id')), (isset($this->_errors[$field->get('id')]) ? $this->_errors[$field->get('id')] : NULL));					}
 					
 					$this->Form->appendChild($primary);
 				}
@@ -437,9 +434,7 @@
 					$sidebar->setAttribute('class', 'secondary');
 
 					foreach($sidebar_fields as $field){
-						$div = new XMLElement('div', NULL, array('class' => 'field '.$field->handle().($field->get('required') == 'yes' ? ' required' : '')));
-						$field->displayPublishPanel($div, $entry->getData($field->get('id')), (isset($this->_errors[$field->get('id')]) ? $this->_errors[$field->get('id')] : NULL));
-						$sidebar->appendChild($div);
+						$field->displayPublishPanel($sidebar, $entry->getData($field->get('id')), (isset($this->_errors[$field->get('id')]) ? $this->_errors[$field->get('id')] : NULL));
 					}
 
 					$this->Form->appendChild($sidebar);
@@ -626,13 +621,11 @@
 
 				if(is_array($main_fields) && !empty($main_fields)){
 					foreach($main_fields as $field){
-						$div = new XMLElement('div', NULL, array('class' => 'field '.$field->handle().($field->get('required') == 'yes' ? ' required' : '')));
 						$field->displayPublishPanel(
-							$div, $entry->getData($field->get('id')),
+							$primary, $entry->getData($field->get('id')),
 							(isset($this->_errors[$field->get('id')]) ? $this->_errors[$field->get('id')] : NULL),
 							null, null, $entry->get('id')
 						);
-						$primary->appendChild($div);
 					}
 					
 					$this->Form->appendChild($primary);
@@ -643,13 +636,11 @@
 					$sidebar->setAttribute('class', 'secondary');
 
 					foreach($sidebar_fields as $field){
-						$div = new XMLElement('div', NULL, array('class' => 'field '.$field->handle().($field->get('required') == 'yes' ? ' required' : '')));
 						$field->displayPublishPanel(
-							$div, $entry->getData($field->get('id')),
+							$sidebar, $entry->getData($field->get('id')),
 							(isset($this->_errors[$field->get('id')]) ? $this->_errors[$field->get('id')] : NULL),
 							null, null, $entry->get('id')
 						);
-						$sidebar->appendChild($div);
 					}
 
 					$this->Form->appendChild($sidebar);
