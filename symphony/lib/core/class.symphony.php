@@ -39,7 +39,8 @@
 				General::cleanArray($_POST);	
 			}
 			
-			include(CONFIG);
+			global $settings;
+			if (!is_array($settings)) include(CONFIG);
 			$this->Configuration = new Configuration(true);
 			$this->Configuration->setArray($settings);
 
