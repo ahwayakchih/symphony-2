@@ -21,8 +21,7 @@
 	
 	## Include some parts of the Symphony engine
 	require_once(CORE . '/class.log.php');
-	require_once(CORE . '/class.datetimeobj.php');	
-	require_once(TOOLKIT . '/class.mysql.php');
+	require_once(CORE . '/class.datetimeobj.php');
 	require_once(TOOLKIT . '/class.xmlelement.php');
 	require_once(TOOLKIT . '/class.general.php');
 	require_once(TOOLKIT . '/class.widget.php');
@@ -35,7 +34,7 @@
     define('SYM_LOG_ALL', 3);
 
 	define('BAD_BROWSER', 0);
-	define('MISSING_MYSQL', 3);
+	define('MISSING_SQL', 3);
 	define('MISSING_ZLIB', 5);
 	define('MISSING_XSL', 6);
 	define('MISSING_XML', 7);
@@ -779,6 +778,8 @@
 
 		function requirements(&$Page){
 
+			global $drivers;
+			$drivers = array();
 			$missing = array();
 
 			if(!GeneralExtended::checkRequirement(phpversion(), 'version', '5.1')){
@@ -786,14 +787,22 @@
 				$missing[] = MISSING_PHP;	
 			}		
 
-			if(!GeneralExtended::checkRequirement('mysql_connect', 'func', true)){
-				$Page->log->pushToLog('Requirement - MySQL extension not present' , SYM_LOG_ERROR, true);
-				$missing[] = MISSING_MYSQL;
+			if(GeneralExtended::checkRequirement('mysql_connect', 'func', true)) $drivers['mysql'] = mysql_get_client_info();
+			if(GeneralExtended::checkRequirement('sqlite_open', 'func', true)) $drivers['sqlite'] = sqlite_libversion();
+
+			if(!isset($drivers['mysql']) && !isset($drivers['sqlite'])){
+				$Page->log->pushToLog('Requirement - Database extension (MySQL or SQLite) not present' , SYM_LOG_ERROR, true);
+				$missing[] = MISSING_SQL;
 			}
 
-			elseif(!GeneralExtended::checkRequirement(mysql_get_client_info(), 'version', '4.1')){
-				$Page->log->pushToLog('Requirement - MySQL Version is not correct. '.mysql_get_client_info().' detected.' , SYM_LOG_ERROR, true);
-				$missing[] = MISSING_MYSQL;
+			elseif(!$drivers['mysql'] && GeneralExtended::checkRequirement($drivers['sqlite'], 'version', '2.8')){
+				$Page->log->pushToLog('Requirement - SQLite Version is not correct. '.$drivers['sqlite'].' detected.' , SYM_LOG_ERROR, true);
+				$missing[] = MISSING_SQL;
+			}
+
+			elseif(!$drivers['sqlite'] && !GeneralExtended::checkRequirement($drivers['mysql'], 'version', '4.1')){
+				$Page->log->pushToLog('Requirement - MySQL Version is not correct. '.$drivers['mysql'].' detected.' , SYM_LOG_ERROR, true);
+				$missing[] = MISSING_SQL;
 			}
 
 			if(!GeneralExtended::checkRequirement('zlib', 'ext', true)){
@@ -819,7 +828,20 @@
 	
 		function install(&$Page, $fields){
 
-			$db = new MySQL;
+			if($fields['database']['driver'] == 'sqlite'){
+				require_once(TOOLKIT . '/class.sqlite.php');
+				$db = new SQLite;
+			}
+			elseif($fields['database']['driver'] == 'mysql'){
+				require_once(TOOLKIT . '/class.mysql.php');
+				$db = new MySQL;
+			}
+			else{
+				$Page->log->pushToLog("Configuration - Bad Database Engine Specified: " . $fields['database']['driver'], SYM_LOG_NOTICE, true);
+				define("kDATABASE_CONNECTION_WARNING", true);
+				if(!defined("ERROR")) define("ERROR", 'no-database');
+				return;
+			}
 
 			$db->connect($fields['database']['host'], 
 						 $fields['database']['username'], 
@@ -827,7 +849,7 @@
 						 $fields['database']['port']);
 
 			if($db->isConnected())
-				$tables = $db->fetch("SHOW TABLES FROM `".$fields['database']['name']."` LIKE '".mysql_escape_string($fields['database']['prefix'])."%'");
+				$tables = $db->fetch("SHOW TABLES FROM `".$fields['database']['name']."` LIKE '".$db->cleanValue($fields['database']['prefix'])."%'");
 
 			## Invalid path
 			if(!@is_dir(rtrim($fields['docroot'], '/') . '/symphony')){
@@ -947,18 +969,24 @@
 	            $install_log->writeToLog('INSTALLATION PROCESS STARTED (' . DateTimeObj::get('c') . ')', true);
 	            $install_log->writeToLog('============================================', true);	         
 
-		        $install_log->pushToLog("MYSQL: Establishing Connection...", SYM_LOG_NOTICE, true, false);       
-		        $db = new MySQL;
+		        $install_log->pushToLog("Database: Establishing Connection...", SYM_LOG_NOTICE, true, false);
+
+				if($database['driver'] == 'sqlite'){
+					$db = new SQLite;
+				}
+				elseif($database['driver'] == 'mysql'){
+					$db = new MySQL;
+				}
 
 		        if(!$db->connect($database['host'], $database['username'], $database['password'], $database['port'])){
-		            define("_INSTALL_ERRORS_", "There was a problem while trying to establish a connection to the MySQL server. Please check your settings.");                                
+		            define("_INSTALL_ERRORS_", "There was a problem while trying to establish a connection to the Database server. Please check your settings.");                                
 		            $install_log->pushToLog("Failed", SYM_LOG_NOTICE,true, true, true);
 		            installResult($Page, $install_log, $start);
 		        }else{
 		            $install_log->pushToLog("Done", SYM_LOG_NOTICE,true, true, true);           
 		        }      
 
-		        $install_log->pushToLog("MYSQL: Selecting Database '".$database['name']."'...", SYM_LOG_NOTICE, true, false); 
+		        $install_log->pushToLog("Database: Selecting Database '".$database['name']."'...", SYM_LOG_NOTICE, true, false); 
 
 		        if(!$db->select($database['name'])){
 		            define("_INSTALL_ERRORS_", "Could not connect to specified database. Please check your settings.");       
@@ -976,10 +1004,10 @@
 					$db->setCharacterSet($conf['database']['character_set']);			
 				}
 			
-		        $install_log->pushToLog("MYSQL: Importing Table Schema...", SYM_LOG_NOTICE, true, false);
+		        $install_log->pushToLog("Database: Importing Table Schema...", SYM_LOG_NOTICE, true, false);
 		        $error = NULL;
 		        if(!fireSql($db, getTableSchema(), $error, ($config['database']['high-compatibility'] == 'yes' ? 'high' : 'normal'))){
-		            define("_INSTALL_ERRORS_", "There was an error while trying to import data to the database. MySQL returned: $error");       
+		            define("_INSTALL_ERRORS_", "There was an error while trying to import data to the database. Database returned: $error");       
 		            $install_log->pushToLog("Failed", SYM_LOG_ERROR,true, true, true);                         
 		            installResult($Page, $install_log, $start);
 		        }else{
@@ -995,7 +1023,7 @@
 					);
 				";
 				
-				$install_log->pushToLog("MYSQL: Creating Default Author...", SYM_LOG_NOTICE, true, false);
+				$install_log->pushToLog("Database: Creating Default Author...", SYM_LOG_NOTICE, true, false);
 		        if(!$db->query($author_sql)){
 					$error = $db->getLastError();
 		            define("_INSTALL_ERRORS_", "There was an error while trying create the default author. MySQL returned: " . $error['num'] . ': ' . $error['msg']);       
@@ -1032,7 +1060,6 @@
 					$conf['settings']['general']['useragent'] = 'Symphony/2000';
 					$conf['settings']['image']['cache'] = '1';
 					$conf['settings']['image']['quality'] = '90';
-					$conf['settings']['database']['driver'] = 'mysql';
 					$conf['settings']['database']['character_set'] = 'utf8';
 					$conf['settings']['database']['character_encoding'] = 'utf8';
 					$conf['settings']['database']['runtime_character_set_alter'] = '1';
@@ -1047,6 +1074,7 @@
 				$conf['settings']['general']['sitename'] = (strlen(trim($config['general']['sitename'])) > 0 ? $config['general']['sitename'] : __('Website Name'));
 		        $conf['settings']['file']['write_mode'] = $config['permission']['file'];
 		        $conf['settings']['directory']['write_mode'] = $config['permission']['directory'];
+				$conf['settings']['database']['driver'] = $database['driver'];
 		        $conf['settings']['database']['host'] = $database['host'];
 		        $conf['settings']['database']['port'] = $database['port'];
 		        $conf['settings']['database']['user'] = $database['username'];
@@ -1235,10 +1263,10 @@ IndexIgnore *
 				
 				else {
 					
-					$install_log->pushToLog("MYSQL: Importing Workspace Data...", SYM_LOG_NOTICE, true, false);
+					$install_log->pushToLog("Database: Importing Workspace Data...", SYM_LOG_NOTICE, true, false);
 			        $error = NULL;
 			        if(!fireSql($db, getWorkspaceData(), $error, ($config['database']['high-compatibility'] == 'yes' ? 'high' : 'normal'))){
-			            define("_INSTALL_ERRORS_", "There was an error while trying to import data to the database. MySQL returned: $error");       
+			            define("_INSTALL_ERRORS_", "There was an error while trying to import data to the database. Database returned: $error");       
 			            $install_log->pushToLog("Failed", SYM_LOG_ERROR,true, true, true);                         
 			            installResult($Page, $install_log, $start);
 			        }else{
@@ -1336,6 +1364,7 @@ IndexIgnore *
 	else{
 		
 		$fields['docroot'] = rtrim(getcwd_safe(), '/');
+		$fields['database']['driver'] = 'sqlite';
 		$fields['database']['host'] = 'localhost';
 		$fields['database']['port'] = '3306';
 		$fields['database']['prefix'] = 'sym_';
@@ -1351,6 +1380,7 @@ IndexIgnore *
 	
 	$warnings = array(
 	
+		'no-database' => __('No valid database extension found. Please enable MySQL or SQLite extension.'),
 		'no-symphony-dir' => __('No <code>/symphony</code> directory was found at this location. Please upload the contents of Symphony\'s install package here.'),
 		'no-write-permission-workspace' => __('Symphony does not have write permission to the existing <code>/workspace</code> directory. Please modify permission settings on this directory and its contents to allow this, such as with a recursive <code>chmod -R</code> command.'),
 		'no-write-permission-manifest' => __('Symphony does not have write permission to the <code>/manifest</code> directory. Please modify permission settings on this directory and its contents to allow this, such as with a recursive <code>chmod -R</code> command.'),
@@ -1386,6 +1416,7 @@ IndexIgnore *
 			global $warnings;
 			global $notices;
 			global $languages;
+			global $drivers;
 		
 			$Form = new XMLElement('form');
 			$Form->setAttribute('action', kINSTALL_FILENAME.($_GET['lang'] ? '?lang='.$_GET['lang'] : ''));
@@ -1509,10 +1540,22 @@ IndexIgnore *
 				$Database->appendChild(new XMLElement('p', __('Please provide Symphony with access to a database.')));
 
 				$class = NULL;
-				if(defined('kDATABASE_CONNECTION_WARNING') && kDATABASE_CONNECTION_WARNING == true) $class = ' warning';		
-	
+				if(defined('kDATABASE_CONNECTION_WARNING') && kDATABASE_CONNECTION_WARNING == true) $class = ' warning';
+
+				$Div = new XMLElement('div');
+				$Div->setAttribute('class', 'group' . $class);
+
+				## fields[database][driver]
+				$options = array();
+				foreach($drivers as $name => $version){
+					$options[] = array($name, ($name == $fields['database']['driver']), $name);
+				}
+				$Div->appendChild(Widget::label(__('Driver'), Widget::select('fields[database][driver]', $options)));
+
 				## fields[database][name]
-				$Database->appendChild(Widget::label(__('Database'), Widget::input('fields[database][name]', $fields['database']['name'])));
+				$Div->appendChild(Widget::label(__('Database'), Widget::input('fields[database][name]', $fields['database']['name'])));
+
+				$Database->appendChild($Div);
 
 				$Div = new XMLElement('div');
 				$Div->setAttribute('class', 'group' . $class);
@@ -1700,9 +1743,9 @@ IndexIgnore *
 				$messages[] = array(__('<abbr title="PHP: Hypertext Pre-processor">PHP</abbr> 5.1 or above'),
 							  		__('Symphony needs a recent version of <abbr title="PHP: Hypertext Pre-processor">PHP</abbr>.'));
 		
-			if(in_array(MISSING_MYSQL, $Page->missing))				
-				$messages[] = array(__('My<abbr title="Structured Query Language">SQL</abbr> 4.1 or above'),
-							  	__('Symphony needs a recent version of My<abbr title="Structured Query Language">SQL</abbr>.'));
+			if(in_array(MISSING_SQL, $Page->missing))				
+				$messages[] = array(__('<abbr title="Structured Query Language">SQL</abbr> (MySQL 4.1 or above, SQLite 2.8 or above)'),
+							  	__('Symphony needs a recent version of My<abbr title="Structured Query Language">SQL</abbr> or <abbr title="Structured Query Language">SQL</abbr>ite.'));
 
 			if(in_array(MISSING_ZLIB, $Page->missing))
 				$messages[] = array(__('ZLib Compression Library'),
