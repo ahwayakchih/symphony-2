@@ -133,18 +133,16 @@
 	    }
 		
 		public function cleanValue($value) {
-			if (function_exists('sqlite_escape_string')) {
-				return sqlite_escape_string($value);
-				
-			} else {
-				return addslashes($value);
-			}
+			if(get_magic_quotes_gpc()) $value = stripslashes($value);
+			return sqlite_escape_string($value);
 		}
 		
 		public function cleanFields(&$array){
+			$gpc = get_magic_quotes_gpc();
 			foreach($array as $key => $val){				
 				if($val == '') $array[$key] = 'NULL';				
-				else $array[$key] = "'".(function_exists('sqlite_escape_string') ? sqlite_escape_string($val) : addslashes($val))."'";
+				elseif($gpc) $array[$key] = "'".sqlite_escape_string(stripslashes($val))."'";
+				else $array[$key] = "'".sqlite_escape_string($val)."'";
 			}
 		}
 		
