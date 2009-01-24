@@ -183,7 +183,7 @@
 		}
 		
 		public function delete($table, $where){
-			$this->query("DELETE FROM $table WHERE $where");
+			$this->query("DELETE FROM '$table' WHERE $where");
 		}
 		
 	    public function close(){
@@ -391,8 +391,8 @@ exit();
 	        }
 
 	        while ($row = @sqlite_fetch_object($this->_result)){
-				// TODO: sqlite seems to keep quoting used for column names, e.g. [id] will be returned as result["[id]"] :(.
-				//       if quoting is kept above then strip it here.
+				// TODO: sqlite seems to keep quoting used for column names, e.g. [id] will be returned as result["[id]"] :(,
+				//       so strip it here.
 				//       Also strip table names (looks like sqlite doesn't strip table name from things like "table.column" :(.
 				$row2 = NULL;
 				foreach ($row as $k => $v) {
@@ -426,7 +426,7 @@ exit();
 	    }
 		
 		public function extractTargetTablesFromQuery($query){			
-			if(!preg_match('/\\s+FROM\\s+(([\\w\\d\\-`_]+(,(\\s+)?)?)+)/i', $query, $matches)) return 'DUAL';
+			if(!preg_match('/\\s+FROM\\s+(([\\w\\d\\-`\'_]+(,(\\s+)?)?)+)/i', $query, $matches)) return 'DUAL';
 			return $matches[1];
 		}
 			
