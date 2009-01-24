@@ -57,7 +57,10 @@
 	    }
 	
 		public function isConnected(){
-	        return (isset($this->_connection['id']) && $this->_connection['id'] !== NULL);
+	        if(isset($this->_connection['rsrc'])){
+				return ($this->_connection['rsrc'] !== FALSE);
+			}
+			return (isset($this->_connection['id']) && $this->_connection['id'] !== FALSE);
 	    }
 	    
 		public function getSelected(){
@@ -70,8 +73,8 @@
 		
 		public function connect($host=NULL, $user=NULL, $password=NULL, $port ='3306'){
 
-			$this->_connection['id'] = NULL;
-			$this->_connection['rsrc'] = NULL;
+			$this->_connection['id'] = FALSE;
+			unset($this->_connection['rsrc']);
 			
 	        if($host) $this->_connection['host'] = $host;
 	        if($user) $this->_connection['user'] = $user;
@@ -187,7 +190,12 @@
 		}
 		
 	    public function close(){
-	        if($this->isConnected()) return @sqlite_close($this->_connection['rsrc']);	
+	        if(!$this->isConnected()) return true;
+
+			@sqlite_close($this->_connection['rsrc']);
+			unset($this->_connection['rsrc']);
+
+			return true;
 	    }
 	
 		public function determineQueryType($query){
