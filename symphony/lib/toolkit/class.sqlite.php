@@ -409,6 +409,7 @@ exit();
 		private function _mysql_show($query){
 			$query = $this->_mysql_escape($query);
 
+			// TODO: extract database name and temporary open that database if it's not current one?
 			if(!preg_match('/SHOW\s+(?:FULL\s+)?TABLES\s+(?:FROM\s+[\'"\w\s]+)?(LIKE\s+[\'"][^\'"]+[\'"])?/i', $query, $m)) return false;
 
 			$query = 'SELECT tbl_name AS "Tables_in_'.$this->connection['database'].'" FROM sqlite_master';
