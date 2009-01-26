@@ -9,7 +9,6 @@
 		private $_lastError;
 		private $_affectedRows;
 		private $_insertID;
-		private $_dumpTables = array();
 		private $_client_info;
 		private $_client_encoding;
 		private $_query_count;
@@ -18,9 +17,10 @@
 		
 		function __construct(){
 			$this->_query_count = 0;
-			$this->_log = array('error' => array(), 'query' => array());
 			$this->_cache = NULL;
 			$this->_optimize = false;
+			$this->flush();
+			$this->flushLog();
 		}
 
 		function __destruct(){
@@ -150,7 +150,7 @@
 			// Multiple Insert
 			if(is_array(current($fields))){
 
-				$sql = "INSERT INTO `$table` (`".implode('`, `', array_keys(current($fields))).'`) VALUES ';
+				$sql = "INSERT INTO `{$table}` (`".implode('`, `', array_keys(current($fields))).'`) VALUES ';
 				
 				foreach($fields as $key => $array){
 					$this->cleanFields($array);
@@ -164,7 +164,7 @@
 			// Single Insert
 			else{
 				$this->cleanFields($fields);
-				$sql = "INSERT ".($updateOnDuplicate ? 'OR REPLACE' : '')." INTO `$table` (`".implode('`, `', array_keys($fields)).'`) VALUES ('.implode(', ', $fields).')';
+				$sql = "INSERT ".($updateOnDuplicate ? 'OR REPLACE' : '')." INTO `{$table}` (`".implode('`, `', array_keys($fields)).'`) VALUES ('.implode(', ', $fields).')';
 			}
 
 			return $this->query($sql);
@@ -172,10 +172,10 @@
 		
 		public function update($fields, $table, $where=NULL){
 			$this->cleanFields($fields);
-			$sql = "UPDATE $table SET ";
+			$sql = "UPDATE {$table} SET ";
 			
 			foreach($fields as $key => $val)
-				$rows[] = " `$key` = $val";
+				$rows[] = " `{$key}` = {$val}";
 			
 			$sql .= implode(', ', $rows) . ($where != NULL ? ' WHERE ' . $where : NULL);
 			
@@ -183,11 +183,7 @@
 		}
 		
 		public function delete($table, $where){
-			$where = $this->_mysql_escape($where);
-			if(trim($where) && preg_match('/\s(ORDER\s+BY|LIMIT)\s/i', $where)){
-				$this->_query("DELETE FROM [{$table}] WHERE rowid IN (SELECT rowid FROM [{$table}] WHERE {$where})");
-			}
-			else $this->_query("DELETE FROM [{$table}] WHERE {$where}");
+			$this->query("DELETE FROM `{$table}` WHERE {$where}");
 		}
 		
 		public function close(){
@@ -222,7 +218,8 @@
 			// TODO: check for and translate subqueries?
 			return $this->$f($query);
 		}
-		
+
+		// TODO: remove this obsolete function?
 		public function extractTargetTablesFromQuery($query){			
 			if(!preg_match('/\\s+FROM\\s+(([\\w\\d\\-`\[\]\'_]+(,(\\s+)?)?)+)/i', $query, $matches)) return 'DUAL';
 			return $matches[1];
@@ -284,10 +281,13 @@
 		public function flush(){
 			$this->_lastResult = array();
 			$this->_lastQuery = NULL;
+			$this->_lastError = NULL;
+			$this->_affectedRows = 0;
+			$this->_insertID = NULL;
 		}
 	
 		public function flushLog(){
-			$this->_log = array();
+			$this->_log = array('error' => array(), 'query' => array());
 		}
 			
 		private function __error($msg = NULL){
@@ -426,7 +426,7 @@
 			$query = $this->_mysql_escape($query);
 
 			// TODO: extract database name and temporary open that database if it's not current one?
-			if(!preg_match('/SHOW\s+(?:FULL\s+)?TABLES\s+(?:FROM\s+[\'"\[\w\s\]]+)?(LIKE\s+[\'"][^\'"]+[\'"])?/i', $query, $m)) return false;
+			if(!preg_match('/SHOW\s+(?:FULL\s+)?TABLES\s+(?:FROM\s+[^\s]+)?(LIKE\s+[\'"][^\'"]+[\'"])?/i', $query, $m)) return false;
 
 			$query = 'SELECT name AS "Tables_in_'.$this->connection['database'].'" FROM '.
 					'(SELECT * FROM sqlite_master UNION ALL SELECT * FROM sqlite_temp_master) WHERE type = \'table\'';
