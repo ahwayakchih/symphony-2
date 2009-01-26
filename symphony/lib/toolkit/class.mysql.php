@@ -79,6 +79,10 @@
 		public function getConnectionResource(){
 			return $this->_connection['id'];
 		}
+
+		public function getLogs(){
+			return $this->_log;
+		}
 		
 		public function connect($host=NULL, $user=NULL, $password=NULL, $port ='3306'){
 			
