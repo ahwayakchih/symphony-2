@@ -795,12 +795,12 @@
 				$missing[] = MISSING_SQL;
 			}
 
-			elseif(!$drivers['mysql'] && GeneralExtended::checkRequirement($drivers['sqlite'], 'version', '2.8')){
+			elseif(!isset($drivers['mysql']) && !GeneralExtended::checkRequirement($drivers['sqlite'], 'version', '2.8.0')){
 				$Page->log->pushToLog('Requirement - SQLite Version is not correct. '.$drivers['sqlite'].' detected.' , SYM_LOG_ERROR, true);
 				$missing[] = MISSING_SQL;
 			}
 
-			elseif(!$drivers['sqlite'] && !GeneralExtended::checkRequirement($drivers['mysql'], 'version', '4.1')){
+			elseif(!isset($drivers['sqlite']) && !GeneralExtended::checkRequirement($drivers['mysql'], 'version', '4.1')){
 				$Page->log->pushToLog('Requirement - MySQL Version is not correct. '.$drivers['mysql'].' detected.' , SYM_LOG_ERROR, true);
 				$missing[] = MISSING_SQL;
 			}
@@ -1007,11 +1007,11 @@
 		        $install_log->pushToLog("Database: Importing Table Schema...", SYM_LOG_NOTICE, true, false);
 		        $error = NULL;
 		        if(!fireSql($db, getTableSchema(), $error, ($config['database']['high-compatibility'] == 'yes' ? 'high' : 'normal'))){
-		            define("_INSTALL_ERRORS_", "There was an error while trying to import data to the database. Database returned: $error");       
-		            $install_log->pushToLog("Failed", SYM_LOG_ERROR,true, true, true);                         
+		            define("_INSTALL_ERRORS_", "There was an error while trying to import data to the database. Database returned: {$error}");       
+		            $install_log->pushToLog("Failed", SYM_LOG_ERROR, true, true, true);                         
 		            installResult($Page, $install_log, $start);
 		        }else{
-		            $install_log->pushToLog("Done", SYM_LOG_NOTICE,true, true, true);           
+		            $install_log->pushToLog("Done", SYM_LOG_NOTICE, true, true, true);           
 		        }
 
 				$author_sql = "
@@ -1744,8 +1744,8 @@ IndexIgnore *
 							  		__('Symphony needs a recent version of <abbr title="PHP: Hypertext Pre-processor">PHP</abbr>.'));
 		
 			if(in_array(MISSING_SQL, $Page->missing))				
-				$messages[] = array(__('<abbr title="Structured Query Language">SQL</abbr> (MySQL 4.1 or above, SQLite 2.8 or above)'),
-							  	__('Symphony needs a recent version of My<abbr title="Structured Query Language">SQL</abbr> or <abbr title="Structured Query Language">SQL</abbr>ite.'));
+				$messages[] = array(__('Recent version of database'),
+							  	__('Symphony needs a recent version of My<abbr title="Structured Query Language">SQL</abbr> (4.1 or above) or <abbr title="Structured Query Language">SQL</abbr>ite (2.8 or above).'));
 
 			if(in_array(MISSING_ZLIB, $Page->missing))
 				$messages[] = array(__('ZLib Compression Library'),

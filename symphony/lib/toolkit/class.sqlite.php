@@ -100,6 +100,8 @@
 			
 			if($db) $this->_connection['database'] = $db;
 
+			if($this->_connection['rsrc']) @sqlite_close($this->_connection['rsrc']);
+
 			global $settings;
 			$this->_connection['rsrc'] = @sqlite_open(DOCROOT . '/' . md5(
 				$this->_connection['user'] . ':' .
@@ -179,10 +181,11 @@
 		}
 		
 		public function delete($table, $where){
+			$where = $this->_mysql_escape($where);
 			if(trim($where) && preg_match('/\s(ORDER\s+BY|LIMIT)\s/i', $where)){
-				$this->_query("DELETE FROM '{$table}' WHERE rowid IN (SELECT rowid FROM '{$table}' WHERE {$where})");
+				$this->_query("DELETE FROM [{$table}] WHERE rowid IN (SELECT rowid FROM [{$table}] WHERE {$where})");
 			}
-			else $this->_query("DELETE FROM '{$table}' WHERE {$where}");
+			else $this->_query("DELETE FROM [{$table}] WHERE {$where}");
 		}
 		
 		public function close(){
@@ -197,18 +200,26 @@
 		public function query($query){
 			if(empty($query)) return false;
 
-			if (!preg_match('/^(create|drop|alter|insert|replace|update|delete|show|optimize|truncate|set)\s/i', $query, $m))
+			// Strip MySQL comments
+			// TODO: this does not remove comments between separate queries, e.g., "DELETE FROM ...; --COMMENT DELETE FROM ...;"
+			$query = preg_replace('/^\s*\-\-[^\n]+\n/', "\n", $query);
+
+			if (!preg_match('/^(create|drop|alter|insert|replace|update|select|delete|show|optimize|truncate|set|--)\s/i', trim($query), $m)){
 				return false;
+			}
 
 			$f = '_mysql_'.strtolower($m[1]);
-			if(!method_exists($this, $f)) return false;
+
+			if(!method_exists($this, $f)){
+				return false;
+			}
 
 			// TODO: check for and translate subqueries?
 			return $this->$f($query);
 		}
 		
 		public function extractTargetTablesFromQuery($query){			
-			if(!preg_match('/\\s+FROM\\s+(([\\w\\d\\-`\'_]+(,(\\s+)?)?)+)/i', $query, $matches)) return 'DUAL';
+			if(!preg_match('/\\s+FROM\\s+(([\\w\\d\\-`\[\]\'_]+(,(\\s+)?)?)+)/i', $query, $matches)) return 'DUAL';
 			return $matches[1];
 		}
 			
@@ -225,6 +236,7 @@
 		}
 	
 		public function fetch($query=NULL, $index_by_field=NULL){
+
 			if($query) $this->query($query);
 	
 			elseif($this->_lastResult == NULL){
@@ -239,7 +251,7 @@
 
 				return $n;
 			}
-			
+
 			return $this->_lastResult;
 		}
 			
@@ -275,10 +287,11 @@
 			
 		private function __error($msg = NULL){
 			if(!$msg){
+				$num = @sqlite_last_error($this->_connection['rsrc']);
 				$msg = $this->_lastError;
 			}
 
-			$this->_log['error'][] = array('query' => $this->_lastQuery, 'msg' => $msg);
+			$this->_log['error'][] = array('query' => $this->_lastQuery, 'msg' => $msg, 'num' => $num);
 
 			trigger_error(__('SQLite Error: %1$s in query "%2$s"', array($msg, $this->_lastQuery)), E_USER_WARNING);
 		}
@@ -334,9 +347,10 @@
 				}
 				return $result;
 			}
+			else if (!trim($query)) return false;
 
 			if($this->_connection['tbl_prefix'] != 'tbl_'){
-				$query = preg_replace('/tbl_(\S+?)([\s\.,]|$)/', $this->_connection['tbl_prefix'].'\\1\\2', $query);
+				$query = preg_replace('/(?<=[\s\[])tbl_(\S+?)([\s\.,\]]|$)/', $this->_connection['tbl_prefix'].'\\1\\2', $query);
 			}
 
 			$query_hash = md5($query);
@@ -354,9 +368,6 @@
 			$this->_query_count++;
 
 			if($result === FALSE && !$noError){
-var_dump($query);
-var_dump($this->_lastError);
-exit();
 				$this->__error();
 				return false;
 			}
@@ -376,7 +387,7 @@ exit();
 			}
 				
 			$this->_log['query'][$query_hash]['time'] = precision_timer('stop', $this->_log['query'][$query_hash]['start']);
-			
+
 			return true;
 		}
 
@@ -394,39 +405,43 @@ exit();
 		// MySQL query translation
 
 		private function _mysql_escape($query){
-			// Following line changes MySQL type of escape (\') to sqlite way (''), changes MySQL backticks to single quotes, and removes MySQL comments.
-			// TODO: backticks part is not safe - it should convert only table and columne names backticks
-			//		(now it converts all of them, including data/values,
-			//		which may screw up things if data is wrapped with doublequotes instead of single quote).
-			return trim(str_replace("\\'", "''", str_replace('`', '"', preg_replace('/(^|\n)--[\w\W]*\n/U', '', $query))));
+			// Following line changes MySQL type of escape (\') to sqlite way (''),
+			// and changes MySQL's backticks to SQLite's square brackets.
+			// TODO: backticks part is not safe - it should convert only backticks which wrap table and column names
+			//		(now it converts all of them, including those inside of data/values).
+			return trim(str_replace("\\'", "''", preg_replace('/`([^`]+)`/', '[$1]', $query)));
 		}
 
 		private function _table_exists($name){
 			$name = $this->cleanValue(trim($m[2], " \t\n\r\0\x0B`'\"[]"));
-			return ($this->_query("SELECT COUNT(*) AS found FROM sqlite_master WHERE type = 'table' AND tbl_name = '{$name}'") && count($this->_lastResult) > 0);
+			return ($this->_query("SELECT COUNT(*) AS found FROM sqlite_master WHERE type = 'table' AND name = '{$name}'") && count($this->_lastResult) > 0 && intval($this->_lastResult['found']) > 0);
 		}
 
 		private function _mysql_show($query){
 			$query = $this->_mysql_escape($query);
 
 			// TODO: extract database name and temporary open that database if it's not current one?
-			if(!preg_match('/SHOW\s+(?:FULL\s+)?TABLES\s+(?:FROM\s+[\'"\w\s]+)?(LIKE\s+[\'"][^\'"]+[\'"])?/i', $query, $m)) return false;
+			if(!preg_match('/SHOW\s+(?:FULL\s+)?TABLES\s+(?:FROM\s+[\'"\[\w\s\]]+)?(LIKE\s+[\'"][^\'"]+[\'"])?/i', $query, $m)) return false;
 
-			$query = 'SELECT tbl_name AS "Tables_in_'.$this->connection['database'].'" FROM sqlite_master';
+			$query = 'SELECT name AS "Tables_in_'.$this->connection['database'].'" FROM '.
+					'(SELECT * FROM sqlite_master UNION ALL SELECT * FROM sqlite_temp_master) WHERE type = \'table\'';
 			if(isset($m[2])){
-				$query .= ' WHERE tbl_name '.$m[2];
+				$query .= ' AND name '.$m[2];
 			}
 
-			return $this->_query($query);
+			return $this->_query($query.' ORDER BY name');
 		}
 
 		private function _mysql_create($query){
 			$query = $this->_mysql_escape($query);
 
-			$tableName = NULL;
+			$tableName = array();
 			$noError = false;
-			if($this->_client_info < 3.3 && preg_match('/CREATE\s+(?:TEMPORARY\s+)TABLE\s+(?:IF NOT EXISTS\s+)?"?([^\("]+)"?\s+(?:LIKE\s+|\()/iU', $query, $tableName)) {
+
+			if($this->_client_info < 3.3 && preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName)) {
 				if($this->_table_exists($tableName[1])) return true;
+
+				$query = preg_replace('/^CREATE\s+(TEMPORARY\s+|)TABLE\s+IF NOT EXISTS\s+/iU', 'CREATE $1 TABLE ', $query);
 				$noError = true;
 			}
 
@@ -462,23 +477,23 @@ exit();
 			$query = preg_replace($find, $rplc, $query);
 
 			// Add INDEX for UNIQUE, FULLTEXT and other KEYs
-			if (preg_match_all('/,?\s+(UNIQUE|FULLTEXT|) KEY\s+"([^"]+)"\s+\(([^\)]+)\),?/U', $query, $m)) {
-				preg_match('/"([^"]+)"\s*\(/', $query, $name);
+			if (preg_match_all('/,?\s+(UNIQUE|FULLTEXT|) KEY\s+\[?([^\]]+)\]?\s+\(([^\)]+)\),?/U', $query, $m)) {
+				if(empty($tableName)) preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName);
 				for ($i = 0; $i < count($m[2]); $i++) {
 					$query = str_replace($m[0][$i], '', $query);
-					$queries[] = 'CREATE '.($m[1][$i] == 'UNIQUE' ? 'UNIQUE' : '').' INDEX "'.$name[1].'.'.$m[2][$i].'" ON '.$name[1].' ('.$m[3][$i].')';
+					$queries[] = 'CREATE '.($m[1][$i] == 'UNIQUE' ? 'UNIQUE' : '').' INDEX "'.$tableName[1].'.'.$m[2][$i].'" ON '.$tableName[1].' ('.$m[3][$i].')';
 					// TODO: rewrite query for fulltext handling? http://phpadvent.org/2008/full-text-searching-with-sqlite-by-scott-macvicar
 				}
 			}
 
 			// Add INDEX for PRIMARY KEY
 			if (preg_match_all('/,?\s+PRIMARY KEY\s+\(([^\)]+)\),?/', $query, $m)) {
-				if(!is_array($tableName)) preg_match('/CREATE\s+(?:TEMPORARY\s+)TABLE\s+(?:IF NOT EXISTS\s+)?"?([^\("]+)"?\s+(?:LIKE\s+|\()/iU', $query, $tableName);
+				if(empty($tableName)) preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName);
 				for ($i = 0; $i < count($m[1]); $i++) {
 					$query = str_replace($m[0][$i], '', $query);
 					$k = trim($m[1][$i], '"');
 					if (preg_match('/"'.$k.'"\s+[^,]+PRIMARY KEY[^,]*,/', $query)) continue;
-					$queries[] = 'CREATE UNIQUE INDEX "'.$tableName[1].'.'.$k.'" ON '.$tableTame[1].' ('.$k.')';
+					$queries[] = 'CREATE UNIQUE INDEX "'.$tableName[1].'.'.$k.'" ON '.$tableName[1].' ('.$k.')';
 				}
 			}
 
@@ -487,6 +502,7 @@ exit();
 			$query = trim(substr($query, 0, $p), " \t\n\r\0\x0B,").')';
 
 			array_unshift($queries, $query);
+
 			return $this->_query($queries, true, $noError);
 		}
 
@@ -505,7 +521,7 @@ exit();
 		private function _mysql_drop($query){
 			$query = $this->_mysql_escape($query);
 
-			if(!preg_match('/DROP\s+(TEMPORARY\s+|)TABLE\s+(IF EXISTS\s+|)("?[^\(",]+"?(\s*,\s*"?[^\(",]+"?)*)(?:\s+RESTRICT|\s+CASCADE)/i', $query, $m)){
+			if(!preg_match('/DROP\s+(TEMPORARY\s+|)TABLE\s+(IF EXISTS\s+|)([^\s,]+(\s*,\s*[^\s,]+)*)(?:\s+RESTRICT|\s+CASCADE)/i', $query, $m)){
 				return true;
 			}
 
@@ -580,9 +596,9 @@ exit();
 		private function _mysql_update($query){
 			$query = $this->_mysql_escape($query);
 
-			$query = preg_replace('/^UPDATE\s+(LOW_PRIORITY\s+)?IGNORE\s/iU', 'UPDATE OR IGNORE ');
+			$query = preg_replace('/^UPDATE\s+(LOW_PRIORITY\s+)?IGNORE\s/iU', 'UPDATE OR IGNORE ', $query);
 
-			if($this->_client_info < 3.3 && preg_match('/\s(ORDER\s+BY|LIMIT)\s/i', $query) && preg_match('/^UPDATE\s+(?:OR IGNORE\s+)?[\'"]?([^\'"]+)[\'\"]?\s+SET/i', $query, $m)){
+			if($this->_client_info < 3.3 && preg_match('/\s(ORDER\s+BY|LIMIT)\s/i', $query) && preg_match('/^UPDATE\s+(?:OR IGNORE\s+)?([^\s,]+)\s+SET/i', $query, $m)){
 				$temp = explode(' WHERE ', $query, 2);
 				$query = $temp[0].' WHERE rowid IN (SELECT rowid FROM '.$m[1].' WHERE '.$temp[1].')';
 			}
@@ -613,7 +629,7 @@ exit();
 			// SQLite has to be compiled with SQLITE_ENABLE_UPDATE_DELETE_LIMIT to support "DELETE ... LIMIT X"
 			// and there is no way to test that option at runtime :(.
 			// That's why we have to rewrite such queries :(.
-			if(preg_match('/^DELETE\s+(?:LOW_PRIORITY\s+)?(?:QUICK\s+)?(?:IGNORE\s+)?FROM\s+([\'"]?[^\'"]+[\'\"]?)\s+WHERE\s+([\w\W]+)\s+(ORDER BY|LIMIT)\s+/iU', $query)){
+			if(preg_match('/^DELETE\s+(?:LOW_PRIORITY\s+)?(?:QUICK\s+)?(?:IGNORE\s+)?FROM\s+([^\s,]+)\s+WHERE\s+([\w\W]+)\s+(ORDER BY|LIMIT)\s+/iU', $query, $m)){
 				$temp = explode(' WHERE ', $query, 2);
 				$query = 'DELETE FROM '.$m[1].' WHERE rowid IN (SELECT rowid FROM '.$m[1].' WHERE '.$temp[1].')';
 			}
