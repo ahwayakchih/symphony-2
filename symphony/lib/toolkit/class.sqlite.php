@@ -245,8 +245,7 @@
 				}
 			}
 
-			$this->_log['query'][$query_hash]['time'] = precision_timer('stop', $this->_log['query'][$query_hash]['start']);
-			$this->_log['query'][$query_hash]['result'] = $result;
+			if($result) $this->_log['query'][$query_hash]['time'] = precision_timer('stop', $this->_log['query'][$query_hash]['start']);
 
 			if($this->_logEverything){
 				$this->_log['query'][$query_hash]['lastQuery'] = $this->_lastQuery;
