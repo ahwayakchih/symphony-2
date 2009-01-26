@@ -9,15 +9,17 @@
 		private $_lastError;
 		private $_affectedRows;
 		private $_insertID;
+		private $_optimize;
 		private $_client_info;
 		private $_client_encoding;
 		private $_query_count;
 		private $_cache;
-		private $_optimize;
+		private $_logEverything;
 		
 		function __construct(){
 			$this->_query_count = 0;
 			$this->_cache = NULL;
+			$this->_logEverything = NULL;
 			$this->_optimize = false;
 			$this->flush();
 			$this->flushLog();
@@ -43,7 +45,23 @@
 		public function isCachingEnabled(){
 			return $this->_cache;
 		}
+
+		public function toggleLogging(){
+			$this->_logEverything = !$this->_logEverything;
+		}
 	
+		public function enableLogging(){
+			$this->_logEverything = true;
+		}
+		
+		public function disableLogging(){
+			$this->_logEverything = false;
+		}
+
+		public function isLogging(){
+			return $this->_logEverything;
+		}
+
 		public function setPrefix($prefix){
 			$this->_connection['tbl_prefix'] = $prefix;
 		}
@@ -201,22 +219,39 @@
 		public function query($query){
 			if(empty($query)) return false;
 
+			if($this->_connection['tbl_prefix'] != 'tbl_'){
+				$query = preg_replace('/(?<=[^a-zA-Z])tbl_(\S+?)([\s\.,\]]|$)/', $this->_connection['tbl_prefix'].'\\1\\2', $query);
+			}
+
+			$query_hash = md5($query.time());
+			$this->_log['query'][$query_hash] = array('query' => $query, 'start' => precision_timer());
+
+			$result = false;
+
 			// Strip MySQL comments
 			// TODO: this does not remove comments between separate queries, e.g., "DELETE FROM ...; --COMMENT DELETE FROM ...;"
 			$query = preg_replace('/^\s*\-\-[^\n]+\n/', "\n", $query);
 
-			if (!preg_match('/^(create|drop|alter|insert|replace|update|select|delete|show|optimize|truncate|set|--)\s/i', trim($query), $m)){
-				return false;
+			// TODO: check for subqueries and translate them too?
+			if(preg_match('/^(create|drop|alter|insert|replace|update|select|delete|show|optimize|truncate|set)\s/i', trim($query), $m)){
+				$f = '_mysql_'.strtolower($m[1]);
+
+				if(method_exists($this, $f)){
+					$result = $this->$f($query);
+				}
 			}
 
-			$f = '_mysql_'.strtolower($m[1]);
+			$this->_log['query'][$query_hash]['time'] = precision_timer('stop', $this->_log['query'][$query_hash]['start']);
+			$this->_log['query'][$query_hash]['result'] = $result;
 
-			if(!method_exists($this, $f)){
-				return false;
+			if($this->_logEverything){
+				$this->_log['query'][$query_hash]['lastQuery'] = $this->_lastQuery;
+				$this->_log['query'][$query_hash]['lastResult'] = $this->_lastResult;
+				$this->_log['query'][$query_hash]['affectedRows'] = $this->_affectedRows;
+				$this->_log['query'][$query_hash]['insertID'] = $this->_insertID;
 			}
 
-			// TODO: check for and translate subqueries?
-			return $this->$f($query);
+			return $result;
 		}
 
 		// TODO: remove this obsolete function?
@@ -354,14 +389,6 @@
 			}
 			else if (!trim($query)) return false;
 
-			if($this->_connection['tbl_prefix'] != 'tbl_'){
-				$query = preg_replace('/(?<=[\s\[])tbl_(\S+?)([\s\.,\]]|$)/', $this->_connection['tbl_prefix'].'\\1\\2', $query);
-			}
-
-			$query_hash = md5($query);
-
-			$this->_log['query'][$query_hash] = array('query' => $query, 'start' => precision_timer());
-
 			$this->flush();
 			$this->_lastQuery = $query;
 
@@ -391,8 +418,6 @@
 				}
 			}
 				
-			$this->_log['query'][$query_hash]['time'] = precision_timer('stop', $this->_log['query'][$query_hash]['start']);
-
 			return true;
 		}
 
