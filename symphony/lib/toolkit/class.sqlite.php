@@ -14,11 +14,13 @@
 		private $_client_encoding;
 		private $_query_count;
 		private $_cache;
+		private $_optimize;
 		
 		function __construct(){
 			$this->_query_count = 0;
 			$this->_log = array('error' => array(), 'query' => array());
 			$this->_cache = NULL;
+			$this->_optimize = false;
 		}
 
 		function __destruct(){
@@ -100,7 +102,7 @@
 			
 			if($db) $this->_connection['database'] = $db;
 
-			if($this->_connection['rsrc']) @sqlite_close($this->_connection['rsrc']);
+			if($this->_connection['rsrc']) $this->close();
 
 			global $settings;
 			$this->_connection['rsrc'] = @sqlite_open(DOCROOT . '/' . md5(
@@ -190,6 +192,9 @@
 		
 		public function close(){
 			if(!$this->isConnected()) return true;
+
+			if($this->_optimize) $this->_query('VACUUM', true);
+			$this->_optimize = false;
 
 			@sqlite_close($this->_connection['rsrc']);
 			unset($this->_connection['rsrc']);
@@ -544,6 +549,7 @@
 
 			// SQLite does not support MySQL's multiple-row insert syntax ('INSERT ... VALUES (...), (...), (...)'),
 			// so we have to split it into multiple queries.
+			// TODO: this is not so safe, because value can contain ')' and screw up whole regexp matching
 			if(preg_match('/ VALUES (\([\w\W]+\)(\s*,\s*\([\w\W]+\))+)$/U', $query, $m)){
 				$query = str_replace($m[0], '', $query);
 				$a = str_split($m[1]);
@@ -598,7 +604,9 @@
 
 			$query = preg_replace('/^UPDATE\s+(LOW_PRIORITY\s+)?IGNORE\s/iU', 'UPDATE OR IGNORE ', $query);
 
-			if($this->_client_info < 3.3 && preg_match('/\s(ORDER\s+BY|LIMIT)\s/i', $query) && preg_match('/^UPDATE\s+(?:OR IGNORE\s+)?([^\s,]+)\s+SET/i', $query, $m)){
+			// SQLite has to be compiled with SQLITE_ENABLE_UPDATE_DELETE_LIMIT to support "UPDATE ... ORDER BY ... LIMIT X".
+			// There is no way to test that option at runtime, so we have to rewrite such queries :(.
+			if(preg_match('/\s(ORDER\s+BY|LIMIT)\s/i', $query) && preg_match('/^UPDATE\s+(?:OR IGNORE\s+)?([^\s,]+)\s+SET/i', $query, $m)){
 				$temp = explode(' WHERE ', $query, 2);
 				$query = $temp[0].' WHERE rowid IN (SELECT rowid FROM '.$m[1].' WHERE '.$temp[1].')';
 			}
@@ -626,9 +634,8 @@
 		private function _mysql_delete($query){
 			$query = $this->_mysql_escape($query);
 
-			// SQLite has to be compiled with SQLITE_ENABLE_UPDATE_DELETE_LIMIT to support "DELETE ... LIMIT X"
-			// and there is no way to test that option at runtime :(.
-			// That's why we have to rewrite such queries :(.
+			// SQLite has to be compiled with SQLITE_ENABLE_UPDATE_DELETE_LIMIT to support "DELETE ... LIMIT X".
+			// There is no way to test that option at runtime, so we have to rewrite such queries :(.
 			if(preg_match('/^DELETE\s+(?:LOW_PRIORITY\s+)?(?:QUICK\s+)?(?:IGNORE\s+)?FROM\s+([^\s,]+)\s+WHERE\s+([\w\W]+)\s+(ORDER BY|LIMIT)\s+/iU', $query, $m)){
 				$temp = explode(' WHERE ', $query, 2);
 				$query = 'DELETE FROM '.$m[1].' WHERE rowid IN (SELECT rowid FROM '.$m[1].' WHERE '.$temp[1].')';
@@ -639,7 +646,8 @@
 		}
 
 		private function _mysql_optimize($query){
-			return $this->_query('VACUUM', true);
+			$this->_optimize = true;
+			return true;
 		}
 
 		private function _mysql_truncate($query){
