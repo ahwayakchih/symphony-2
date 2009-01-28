@@ -62,6 +62,13 @@
 			
 			$this->Cookie =& new Cookie(__SYM_COOKIE_PREFIX_, TWO_WEEKS, __SYM_COOKIE_PATH__);
 
+			try{
+				Lang::init(LANG . '/lang.%s.php', __LANG__);
+			}
+			catch(Exception $e){
+				trigger_error($e->getMessage(), E_USER_ERROR);
+			}
+
 			if(!$this->initialiseDatabase()){
 				$error = $this->Database->getLastError();
 				$this->customError(E_USER_ERROR, 'Symphony Database Error', $error['num'] . ': ' . $error['msg'], true, true, 'database-error', array('error' => $error, 'message' => __('There was a problem whilst attempting to establish a database connection. Please check all connection information is correct. The following error was returned.')));
@@ -71,18 +78,11 @@
 
 			DateTimeObj::setDefaultTimezone($this->Configuration->get('timezone', 'region'));
 			
-			try{
-				Lang::init(LANG . '/lang.%s.php', __LANG__);
-			}
-			catch(Exception $e){
-				trigger_error($e->getMessage(), E_USER_ERROR);
-			}			
-
 		}
 		
 		public function initialiseExtensionManager(){
-			$this->ExtensionManager =& new ExtensionManager($this);
-			return is_object($this->ExtensionManager);
+			$this->ExtensionManager = new ExtensionManager($this);
+			return ($this->ExtensionManager instanceof ExtensionManager);
 		}
 		
 		public function initialiseDatabase(){
@@ -135,8 +135,8 @@
 
 		public function isLoggedIn(){
 
-			$un = addslashes($this->Cookie->get('username'));
-			$pw = addslashes($this->Cookie->get('pass'));
+			$un = $this->Database->cleanValue($this->Cookie->get('username'));
+			$pw = $this->Database->cleanValue($this->Cookie->get('pass'));
 
 			$id = $this->Database->fetchVar('id', 0, "SELECT `id` FROM `tbl_authors` WHERE `username` = '$un' AND `password` = '$pw' LIMIT 1");
 
@@ -157,8 +157,8 @@
 		
 		public function login($username, $password, $isHash=false){
 			
-			$username = addslashes($username);
-			$password = addslashes($password);
+			$username = $this->Database->cleanValue($username);
+			$password = $this->Database->cleanValue($password);
 			
 			if(!$isHash) $password = md5($password);
 
@@ -179,7 +179,7 @@
 		
 		public function loginFromToken($token){
 			
-			$token = addslashes($token);
+			$token = $this->Database->cleanValue($token);
 			
 			if(strlen($token) == 6){
 				$row = $this->Database->fetchRow(0, "SELECT `a`.`id`, `a`.`username`, `a`.`password` 
