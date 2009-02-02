@@ -27,9 +27,9 @@
 
 			$aTableHead = array(
 
-				array('Name', 'col'),
-				array('Email Address', 'col'),
-				array('Last Seen', 'col'),				
+				array(__('Name'), 'col'),
+				array(__('Email Address'), 'col'),
+				array(__('Last Seen'), 'col'),				
 
 			);	
 
@@ -191,7 +191,7 @@
 			if($this->_context[0] == 'edit' && $author->get('id') == $this->_Parent->Author->get('id')) $isOwner = true;
 
 			$this->setTitle(__(($this->_context[0] == 'new' ? '%1$s &ndash; %2$s &ndash; %3$s' : '%1$s &ndash; %2$s'), array(__('Symphony'), __('Authors'), $author->getFullName())));
-			$this->appendSubheading(($this->_context[0] == 'new' ? 'Untitled' : $author->getFullName()));			
+			$this->appendSubheading(($this->_context[0] == 'new' ? __('Untitled') : $author->getFullName()));			
 			
 			### Essentials ###			
 			$group = new XMLElement('fieldset');
