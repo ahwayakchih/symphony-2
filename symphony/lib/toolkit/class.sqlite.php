@@ -230,7 +230,9 @@
 
 			// Strip MySQL comments
 			// TODO: this does not remove comments between separate queries, e.g., "DELETE FROM ...; --COMMENT DELETE FROM ...;"
-			$query = preg_replace('/^\s*\-\-[^\n]+\n/', "\n", $query);
+			while (preg_match('/^\s*\-\-/', $query)) {
+				$query = preg_replace('/^\s*\-\-[^\n]+\n/', "\n", $query);
+			}
 
 			// TODO: check for subqueries and translate them too?
 			if(preg_match('/^(create|drop|alter|insert|replace|update|select|delete|show|optimize|truncate|set)\s/i', trim($query), $m)){
@@ -433,17 +435,41 @@
 
 		// MySQL query translation
 
+		// This one is used only as callback for preg_replace_callback!
+		public function _mysql_escape_quotes($value) {
+			$from = array('\x00', '\n', '\r', '\\\\', '\x1a', '`');
+			$to = array("\x00", "\n", "\r", '\\', "\x1a", '\`');
+			if ($value[1] == '"') {
+				$from[] = '\"';
+				$to[] = '""';
+				$from[] = "\\'";
+				$to[] = "'";
+			}
+			else if ($value[1] == "'") {
+				$from[] = '\"';
+				$to[] = '"';
+				$from[] = "\\'";
+				$to[] = "''";
+			}
+			else {
+				$from[] = '\"';
+				$to[] = '""';
+				$from[] = "\\'";
+				$to[] = "''";
+			}
+			return str_replace($from, $to, $value[0]);
+		}
+
 		private function _mysql_escape($query){
 			// Following line changes MySQL type of escape (\') to sqlite way (''),
 			// and changes MySQL's backticks to SQLite's square brackets.
-			// TODO: backticks part is not safe - it should convert only backticks which wrap table and column names
-			//		(now it converts all of them, including those inside of data/values).
-			return trim(str_replace("\\'", "''", preg_replace('/`([^`]+)`/', '[$1]', $query)));
+			$query = preg_replace_callback('/(?<!\\\\)([\'"])([\w\W]*)((?<!\\\\)\1)/U', array($this, '_mysql_escape_quotes'), $query);
+			return trim(str_replace('\`', '`', preg_replace('/([^\\\\])`([^`]+)`/', '$1[$2]', $query)));
 		}
 
 		private function _table_exists($name){
-			$name = $this->cleanValue(trim($m[2], " \t\n\r\0\x0B`'\"[]"));
-			return ($this->_query("SELECT COUNT(*) AS found FROM sqlite_master WHERE type = 'table' AND name = '{$name}'") && count($this->_lastResult) > 0 && intval($this->_lastResult['found']) > 0);
+			$name = $this->cleanValue(trim($name, " \t\n\r\0\x0B`'\"[]"));
+			return ($this->_query("SELECT COUNT(*) AS found FROM sqlite_master WHERE type = 'table' AND name = '{$name}'") && count($this->_lastResult) > 0 && intval($this->_lastResult[0]['found']) > 0);
 		}
 
 		private function _mysql_show($query){
@@ -506,7 +532,7 @@
 			$query = preg_replace($find, $rplc, $query);
 
 			// Add INDEX for UNIQUE, FULLTEXT and other KEYs
-			if (preg_match_all('/,?\s+(UNIQUE|FULLTEXT|) KEY\s+\[?([^\]]+)\]?\s+\(([^\)]+)\),?/U', $query, $m)) {
+			if (preg_match_all('/,?\s+(UNIQUE|FULLTEXT|) KEY\s+(\[?[^\[\(\]]+\]?)\s+\(([^\)]+)\),?/iU', $query, $m)) {
 				if(empty($tableName)) preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName);
 				for ($i = 0; $i < count($m[2]); $i++) {
 					$query = str_replace($m[0][$i], '', $query);
@@ -550,7 +576,7 @@
 		private function _mysql_drop($query){
 			$query = $this->_mysql_escape($query);
 
-			if(!preg_match('/DROP\s+(TEMPORARY\s+|)TABLE\s+(IF EXISTS\s+|)([^\s,]+(\s*,\s*[^\s,]+)*)(?:\s+RESTRICT|\s+CASCADE)/i', $query, $m)){
+			if(!preg_match('/DROP\s+(TEMPORARY\s+|)TABLE\s+(IF EXISTS\s+|)(\[?[^\s,]+\]?(\s*,\s*\[?[^\s,]+\]?)*)(?:\s+RESTRICT|\s+CASCADE|)/i', $query, $m)){
 				return true;
 			}
 
@@ -560,7 +586,8 @@
 
 			$queries = array();
 			foreach(explode(',', $m[3]) as $n){
-				$queries[] = 'DROP TABLE "'.trim($n, " \t\n\r\0\x0B,").'"';
+				$n = trim($n, " \t\n\r\0\x0B,");
+				if ($this->_table_exists($n)) $queries[] = "DROP TABLE {$n}";
 			}
 
 			return $this->_query($queries, true, $noError);
@@ -570,11 +597,14 @@
 			$query = $this->_mysql_escape($query);
 
 			// TODO: support "update" like syntax: http://dev.mysql.com/doc/refman/5.0/en/replace.html
+			// TODO: support "... ON DUPLICATE KEY UPDATE" syntax: http://dev.mysql.com/doc/refman/5.1/en/insert-on-duplicate.html
 
 			// SQLite does not support MySQL's multiple-row insert syntax ('INSERT ... VALUES (...), (...), (...)'),
 			// so we have to split it into multiple queries.
-			// TODO: this is not so safe, because value can contain ')' and screw up whole regexp matching
+			// TODO: this is not so safe, because value can contain ')' and screw up whole regexp matching. Parse values?
+//var_dump($query);
 			if(preg_match('/ VALUES (\([\w\W]+\)(\s*,\s*\([\w\W]+\))+)$/U', $query, $m)){
+//			if(preg_match('/\s+VALUES\s+([\w\W]+);?$/i', $query, $m)){
 				$query = str_replace($m[0], '', $query);
 				$a = str_split($m[1]);
 				$insideQuote = '';
