@@ -27,14 +27,11 @@
 					case 'saved':
 						$this->pageAlert(
 							__(
-								'%1$s updated at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>', 
+								'Data source updated at %1$s. <a href="%2$s">Create another?</a> <a href="%2$s">View all Data sources</a>', 
 								array(
-									__('Data source'), 
 									DateTimeObj::get(__SYM_TIME_FORMAT__), 
 									URL . '/symphony/blueprints/datasources/new/', 
-									URL . '/symphony/blueprints/components/', 
-									__('Data sources')
-								)
+									URL . '/symphony/blueprints/components/'								)
 							), 
 							Alert::SUCCESS);
 						break;
@@ -42,13 +39,11 @@
 					case 'created':
 						$this->pageAlert(
 							__(
-								'%1$s created at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>', 
+								'Data source created at %1$s. <a href="%2$s">Create another?</a> <a href="%3$s">View all Data source</a>', 
 								array(
-									__('Data source'), 
 									DateTimeObj::get(__SYM_TIME_FORMAT__), 
 									URL . '/symphony/blueprints/datasources/new/', 
-									URL . '/symphony/blueprints/components/', 
-									__('Data sources')
+									URL . '/symphony/blueprints/components/' 
 								)
 							), 
 							Alert::SUCCESS);
@@ -173,13 +168,13 @@
 			$options = array(
 								
 				array('label' => __('System'), 'options' => array(
-							array('authors', ($fields['source'] == 'authors'), __('Authors')),
-							array('navigation', ($fields['source'] == 'navigation'), __('Navigation')),
+							array(__('authors'), ($fields['source'] == __('authors')), __('Authors')),
+							array(__('navigation'), ($fields['source'] == __('navigation')), __('Navigation')),
 					)),
 							
 				array('label' => __('Custom XML'), 'options' => array(			
-							array('dynamic_xml', ($fields['source'] == 'dynamic_xml'), __('Dynamic XML')),	
-							array('static_xml', ($fields['source'] == 'static_xml'), __('Static XML')),
+							array(__('dynamic_xml'), ($fields['source'] == __('dynamic_xml')), __('Dynamic XML')),	
+							array(__('static_xml'), ($fields['source'] == __('static_xml')), __('Static XML')),
 					)),
 				
 			);
