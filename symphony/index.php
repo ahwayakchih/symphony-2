@@ -1,21 +1,28 @@
 <?php
 
-	if(!is_file('../manifest/config.php')) die('<h2>Error</h2><p>Could not locate Symphony configuration file. Please check <code>manifest/config.php</code> exists.</p>');
-			
-	require_once('../manifest/config.php');	
+	define('DOCROOT', rtrim(dirname(dirname(__FILE__)), '/'));
+	define('DOMAIN', rtrim(rtrim($_SERVER['HTTP_HOST'], '/') . dirname(dirname($_SERVER['PHP_SELF'])), '/'));
+
+	require(DOCROOT . '/symphony/lib/boot/bundle.php');
 	require_once(CORE . '/class.administration.php');
-	
+
 	$Admin = Administration::instance();
 
-	print $Admin->display(getCurrentPage());
-	
+	$output = $Admin->display(getCurrentPage());
+
 	## Temporary: Display debuging information
 	if($Admin->displayProfilerReport == true){
-		print '<!-- ' . Administration::CRLF;
-		print 'Total Render Time: ' . $Admin->Profiler->retrieveTotalRunningTime() . Administration::CRLF . Administration::CRLF;
+		ob_start();
+		printf("\n<!-- \n Total Render Time: %s \n\n", $Admin->Profiler->retrieveTotalRunningTime());
 		print_r($Admin->Database->getStatistics());
 		print_r($Admin->Profiler);
-		print CRLF . ' -->';
+		print "\n -->";
+		$output .= ob_get_contents();
+		ob_end_clean();
 	}
-	
+
+	header(sprintf('Content-Length: %d', strlen($output)));
+	echo $output;
+
 	exit();
+	

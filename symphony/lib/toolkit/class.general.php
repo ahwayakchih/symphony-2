@@ -1,7 +1,5 @@
 <?php
 
-	
-	
 	Class General{
 		
 		const CRLF = "\r\n";
@@ -30,71 +28,6 @@
 		   return @htmlspecialchars_decode($str);
 		}
 
-		/***
-		
-		Method: substr_f
-		Description: grabs the first character of a string
-		Param: $string - a string to operate on
-		Return: the first character of the input string
-		
-		***/		
-		public static function substr_f($string){
-			return (string)$string{0};
-		}
-		
-		/***
-		
-		Method: findKeywordsArray
-		Description: using any array of strings, this public static function will attempt to find
-		             any occurance of a needle
-		Param: $needle - string to search for
-		       $haystack - the string or array to search
-		       $fields (optional) - 
-			   $any (optional) - if true, the public static function will return if any match is found
-		Return: true or false
-		
-		***/		
-		public static function findKeywordsArray($needle, $haystack, $fields=array(), $any=true){
-		
-			
-			$result = array();
-			
-			foreach($haystack as $h){
-			
-				$match = false;
-				
-				foreach($needle as $n){
-					foreach($fields as $f){
-					
-						if(stripos($h[$f], $n))
-							$match = true;
-							
-						else
-							if(!$any) $match = false;
-						
-					}
-				}
-				
-				if($match) array_push($result, $h);
-
-			}		
-			
-			return $result;
-		
-		}
-
-		/***
-		
-		Method: stripEntities
-		Description: will replace any html entity with the replacement string
-		Param: $string - string to operate on
-		       $replacement - string to replace any entities with
-		Return: the resultant string
-		
-		***/		
-		public static function stripEntities($string, $replacement=''){
-			return preg_replace('/(&[\\w]{2,6};)/', $replacement, $string);
-		}
 		
 		/***
 		
@@ -217,52 +150,6 @@
 			return $url;
 		}
 
-		/***
-		
-		Method: nullIfZero
-		Description: mainly for SQL statements, this will convert a 0 value to 'IS NULL'
-		Param: $value - string to operate on
-		Return: the formatted string suitable for use in the SQL statement
-		
-		***/		
-		public static function nullIfZero ($value) { 
-			if(intval ($value) == 0) { 
-				return 'IS NULL'; 
-			}else { 
-				return '= ' . $value; 
-			} 
-		}  
-
-
-		/***
-		
-		Method: get_class_methods_filter
-		Description: similar to get_class_methods, however this allows you to filter the
-		             result set using a regular expressions
-		Param: $classname - the name of the class. Must be in the class pool
-		       $critera (optional) - a regular expression to match against. Leave blank 
-		                             to return all results
-		Return: the formatted string suitable for use in the SQL statement
-		
-		***/		
-		public static function get_class_methods_filter($classname, $criteria=NULL){
-			
-			$methods = get_class_methods($classname);
-			
-			if($criteria == NULL) return $methods;
-			
-			$result = array();
-			
-			foreach($methods as $m){
-				
-				if(preg_match($criteria, $m))
-					$result[] = $m;
-				
-			}
-			
-			return $result;
-			
-		}
 
 		/***
 		
@@ -303,22 +190,14 @@
 		/***
 
 		Method: encodeHeader
-		Description: Encodes parts of an email header if necessary, according to RFC2047;
-		             does not need the IMAP module installed (like the imap_8bit function);
-		Added by:    Michael Eichelsdoerfer
-		Source:      http://www.php.net/manual/en/function.imap-8bit.php (see comments);
+		Description: Encodes header
+		Source:      http://bitprison.net/php_mail_utf-8_subject_and_message
+		More info:   http://www.ietf.org/rfc/rfc2047.txt
 
 		***/
 		public static function encodeHeader($input, $charset='ISO-8859-1'){
-
-		   preg_match_all('/(\s?\w*[\x80-\xFF]+\w*\s?)/', $input, $matches);
-
-		   foreach($matches[1] as $value){
-		       $replacement = preg_replace('/([\x20\x80-\xFF])/e', '"=" . strtoupper(dechex(ord("\1")))', $value);
-		       $input = str_replace($value, '=?' . $charset . '?Q?' . $replacement . '?=', $input);
-		   }
-
-		   return wordwrap($input, 75, "\n\t", true);
+			$separator = "?=".self::CRLF."=?{$charset}?B?";
+			return "=?{$charset}?B?".wordwrap(base64_encode($input), 75-strlen($separator), $separator, true).'?=';
 		}
 
 		/***
@@ -334,8 +213,7 @@
 		Return: true or false
 
 		***/		
-		public static function sendEmail($to_email, $from_email, $from_name, $subject, $message, array $additional_headers=array()){	
-
+		public static function sendEmail($to_email, $from_email, $from_name, $subject, $message, array $additional_headers = array()) {
 			## Check for injection attacks (http://securephp.damonkohler.com/index.php/Email_Injection)
 			if ((eregi("\r", $from_email) || eregi("\n", $from_email))
 				|| (eregi("\r", $from_name) || eregi("\n", $from_name))){
@@ -343,63 +221,39 @@
 		   	}
 			####
 			
-			$subject = General::encodeHeader(utf8_decode($subject));
-			$from_name = General::encodeHeader(utf8_decode($from_name));
+			$subject = General::encodeHeader($subject, 'UTF-8');
+			$from_name = General::encodeHeader($from_name, 'UTF-8');
+			$headers = array();
 			
-			$headers = array(
-							"From: {$from_name} <{$from_email}>",
-					 		"Reply-To: {$from_name} <{$from_email}>",	
-							sprintf('Message-ID: <%s@%s>', md5(uniqid(time())), $_SERVER['SERVER_NAME']),
-							"Return-Path: <{$from_email}>",
-							'Importance: normal',
-							'Priority: normal',
-							'X-Sender: Symphony Email Module <noreply@symphony21.com>',
-							'X-Mailer: Symphony Email Module',
-							'X-Priority: 3',
-							'Content-Type: text/plain; charset="UTF-8"',
-						);
-
-			if(!empty($additional_headers)){
-				$headers = array_merge($headers, $additional_headers);
+			$default_headers = array(
+				'From'			=> "{$from_name} <{$from_email}>",
+		 		'Reply-To'		=> "{$from_name} <{$from_email}>",	
+				'Message-ID'	=> sprintf('<%s@%s>', md5(uniqid(time())), $_SERVER['SERVER_NAME']),
+				'Return-Path'	=> "<{$from_email}>",
+				'Importance'	=> 'normal',
+				'Priority'		=> 'normal',
+				'X-Sender'		=> 'Symphony Email Module <noreply@symphony21.com>',
+				'X-Mailer'		=> 'Symphony Email Module',
+				'X-Priority'	=> '3',
+				'MIME-Version'	=> '1.0',
+				'Content-Type'	=> 'text/plain; charset=UTF-8',
+			);
+			
+			if (!empty($additional_headers)) {
+				foreach ($additional_headers as $header => $value) {
+					$header = preg_replace_callback('/\w+/', create_function('$m', 'if($m[0]=="MIME"||$m[0]=="ID") return $m[0]; else return ucfirst($m[0]);'), $header);
+					$default_headers[$header] = $value;
+				}
 			}
 			
-			if(!mail($to_email, $subject, @wordwrap($message, 70), @implode(self::CRLF, $headers) . self::CRLF)) return false;
+			foreach ($default_headers as $header => $value) {
+				$headers[] = sprintf('%s: %s', $header, $value);
+			}
+			
+			if (!mail($to_email, $subject, @wordwrap($message, 70), @implode(self::CRLF, $headers) . self::CRLF)) return false;
 
 			return true;
 		}
-
-
-		/***
-		
-		Method: padString
-		Description: Pads a string with a specified string until it is of a certain length
-		Param: $str - string to operate on
-		       $length - desired string length
-		       $spacer (optional) - the character you wish to pad with
-		       $align (optional) - right, left or middle padding
-		Return: padded string
-		
-		***/
-		/*public static function padString($str, $length, $spacer=" ", $align="left"){
-			
-			switch($align){
-				
-				case "right":
-					return $str . self::repeatStr($spacer, $length - strlen($str));
-					break;
-					
-				case "center":
-					return self::repeatStr($spacer, ($length - strlen($str)) * 0.5 ) . $str . self::repeatStr($spacer, ($length - strlen($str)) * 0.5 );
-					break;
-					
-				case "left":
-				default:
-					return self::repeatStr($spacer, $length - strlen($str)) . $str;
-					break;
-				
-			}
-				
-		}*/
 
 
 		/***
@@ -412,41 +266,10 @@
 		
 		***/		
 		public static function repeatStr($str, $xx){
-			
 			$xx = ceil(max(0, $xx));
-
 			return ($xx == 0 ? NULL : str_pad('', strlen($str) * $xx, $str));
-
-				
-			/*$result = '';
-			
-			for($ii = 0; $ii < $xx; $ii++){
-				
-				$result .= $str;	
-				
-			}
-			
-			return $result;*/
-				
 		}
 
-
-		/***
-		
-		Method: strPlural
-		Description: Given a number, this will return the singular or plural variable.
-		             This is useful when dealing with counts. 1 frog or 2 frogs.
-		Param: $num - number to base the result on. 0 - plural, 1 - singular, >1 - plural
-		       $singular - string to return if it is a singular
-			   $plural - string to return if it is a plural
-		Return: resultant string
-		
-		***/		
-		public static function strPlural($num, $singular, $plural){		
-			$num = intval($num);			
-			return ($num == 1 ? $singular : $plural);				
-		}
-		
 		/***
 		
 		Method: substrmin
@@ -654,26 +477,6 @@
 
 		/***
 		
-		Method: str2array
-		Description: splits a string by a delimiter
-		Param: $string - string to operate on
-		       $preserve (optional) - if true, this will retain any empty array values
-		       $delim (optional) - a string to split by
-		Return: array of string parts
-		
-		***/		
-		public static function str2array($string, $preserve=true, $delim="\\r\\n"){	
-				
-			if(!$preserve)
-				return preg_split('/[\\r\\n]/', $string, -1, PREG_SPLIT_NO_EMPTY);
-				
-			return preg_split('/[\\r\\n]/', $string);
-						
-		}
-
-
-		/***
-		
 		Method: writeFile
 		Description: writes the contents of $data to a file $file.
 		Param: $file - file path
@@ -754,8 +557,7 @@
 		
 		***/		
 		public static function getExtension($file){
-		    $parts = explode('.', basename($file));
-			return array_pop($parts);
+			return pathinfo($file, PATHINFO_EXTENSION);
 		}
 
 		/***
@@ -866,67 +668,6 @@
 			return $files;
 		}
 
-		/***
-
-		Method: listStructureFlat
-		Description: will index a directory struction from start point $dir, returning 
-		             a flat array where each array key is a path to a file
-		Param: $dir (optional) - path to start indexing at. must be readable
-			   $filters (optional) - either a regular expression or an array of allowable
-			                         file types
-			   $recurse (optional) - if true, the method will recursively traverse 
-			                         the directory stucture
-			   $sort (optional) - sort order of indexed files
-			   $strip_root (optional) - can remove the $dir portion of the file path for
-			                            array keys.
-			   $exclude (optional) - ignores file types contained in this array
-		Return: flat array containing the directory/file structure
-
-		***/		
-		public static function listStructureFlat($dir='.', $filters=array(), $recurse=true, $sort='asc', $strip_root=NULL, $exclude=array(), $ignore_hidden=true, $exclude_dir=array()){
-
-			if(!is_dir($dir)) return;
-
-		    $files = array();
-
-			foreach(scandir($dir) as $file){
-				if($file != '.' && $file != '..' && (!$ignore_hidden || ($ignore_hidden && $file{0} != '.'))){	
-					if(@is_dir("$dir/$file")){
-
-						if($recurse && !in_array($file, $exclude_dir))
-							$files = array_merge($files, self::listStructureFlat("$dir/$file", $filters, $recurse, $sort, $strip_root, $exclude, $ignore_hidden));
-
-					}else{
-
-						$can_include = true;
-
-						if(!empty($filters)){
-							$can_include = in_array(self::getExtension($file), $filters);
-						}
-
-						if(!empty($exclude)){
-							$can_include = !in_array(self::getExtension($file), $exclude);
-						}					
-
-						if($can_include){
-							$files[] = array('name' => $file, 'path' => $dir);
-						}				
-					}
-				}
-			}
-
-			if($sort == 'desc') usort($files, array('General', 'fileSortR'));		
-			elseif($sort == 'mtime') usort($files, array('General', 'filemtimeSort'));			
-			else usort($files, array('General', 'fileSort'));
-
-			if($strip_root){
-				for($ii = 0; $ii < count($files); $ii++)
-					$files[$ii]['path'] = str_replace($strip_root, '', $files[$ii]['path']);
-			}
-
-			return $files;	
-
-		}
 	
 		/***
 		
@@ -1037,33 +778,6 @@
 		}
 
 
-		/***
-		
-		Method: dateDiff
-		Description: this will calculate the number of seconds between two dates
-		Param: $date1 - start date. Must be a valid unix timestamp
-		       $date2 (optional) - end date. Must be a valid unix timestamp. If blank
-		                           the current date is used
-		Return: number of seconds elapsed
-		
-		***/		
-		public static function dateDiff($date1, $date2=null){
-			
-			if(!$date2) $date2 = time();
-			
-			if($date1 < $date2)
-				$diff = $date2 - $date1;
-			else
-				$diff = $date1 - $date2;	
-				
-			$m1 = (1 / 60);
-			$m2 = (1 / 24);	
-			
-			return floor(((($diff * $m1) * $m1) * $m2));
-			
-		}
-
-
 		public static function uploadFile($dest_path, $dest_name, $tmp_name, $perm=0777){
 			
 			##Upload the file
@@ -1113,6 +827,19 @@
 
 			return $xDate;
 			
+		}
+
+		public static function buildPaginationElement($total_entries=0, $total_pages=0, $entries_per_page=1, $current_page=1){
+			
+			$pageinfo = new XMLElement('pagination');
+			
+			$pageinfo->setAttribute('total-entries', $total_entries);
+			$pageinfo->setAttribute('total-pages', $total_pages);
+			$pageinfo->setAttribute('entries-per-page', $entries_per_page);
+			$pageinfo->setAttribute('current-page', $current_page);						
+
+			return $pageinfo;
+				
 		}
 		
 	}

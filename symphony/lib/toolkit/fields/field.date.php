@@ -13,7 +13,7 @@
 		
 		function __construct(&$parent){
 			parent::__construct($parent);
-			$this->_name = 'Date';
+			$this->_name = __('Date');
 			$this->key = 1;
 		}
 
@@ -91,7 +91,11 @@
 
 		function prepareTableValue($data, XMLElement $link=NULL){
 			return parent::prepareTableValue(array('value' => DateTimeObj::get(__SYM_DATE_FORMAT__, $data['local'])), $link);
-		}		
+		}	
+		
+		public function getParameterPoolValue($data){
+     		return DateTimeObj::get('Y-m-d H:i:s', $data['local']);
+		}	
 			
 		function groupRecords($records){
 
@@ -129,7 +133,7 @@
 
 		function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
 			$joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
-			$sort = 'ORDER BY ' . (strtolower($order) == 'random' ? 'RAND()' : "`ed`.`gmt` $order");
+			$sort = 'ORDER BY ' . (in_array(strtolower($order), array('random', 'rand')) ? 'RAND()' : "`ed`.`gmt` $order");
 		}
 
 		function buildDSRetrivalSQL($data, &$joins, &$where, $andOperation=false){

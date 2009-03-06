@@ -42,6 +42,8 @@
 			}
 
 			else{
+				
+				$bEven = false;
 
 				foreach($sections as $s){
 					
@@ -54,7 +56,9 @@
 					$td2->appendChild(Widget::Input('items['.$s->get('id').']', 'on', 'checkbox'));
 
 					## Add a row to the body array, assigning each cell to the row
-					$aTableBody[] = Widget::TableRow(array($td1, $td2), ($bEven ? 'even' : NULL));		
+					$aTableBody[] = Widget::TableRow(array($td1, $td2), ($bEven ? 'even' : NULL));
+					
+					$bEven = !$bEven;
 
 				}
 			}
@@ -207,13 +211,11 @@
 					case 'saved':
 						$this->pageAlert(
 							__(
-								'%1$s updated at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>', 
+								'Section updated at %1$s. <a href="%2$s">Create another?</a> <a href="%3$s">View all Sections</a>', 
 								array(
-									__('Section'), 
 									DateTimeObj::get(__SYM_TIME_FORMAT__), 
 									URL . '/symphony/blueprints/sections/new/', 
-									URL . '/symphony/blueprints/sections/', 
-									__('Sections')
+									URL . '/symphony/blueprints/sections/' 
 								)
 							), 
 							Alert::SUCCESS);
@@ -222,13 +224,11 @@
 					case 'created':
 						$this->pageAlert(
 							__(
-								'%1$s created at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>', 
+								'Section created at %1$s. <a href="%2$s">Create another?</a> <a href="%3$s">View all Sections</a>', 
 								array(
-									__('Section'), 
 									DateTimeObj::get(__SYM_TIME_FORMAT__), 
 									URL . '/symphony/blueprints/sections/new/', 
-									URL . '/symphony/blueprints/sections/', 
-									__('Sections')
+									URL . '/symphony/blueprints/sections/' 
 								)
 							), 
 							Alert::SUCCESS);

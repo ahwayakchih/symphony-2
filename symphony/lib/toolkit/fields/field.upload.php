@@ -4,7 +4,7 @@
 		public function __construct(&$parent){
 			parent::__construct($parent);
 			
-			$this->_name = 'File Upload';
+			$this->_name = __('File Upload');
 			$this->_required = true;
 			
 			$this->set('required', 'yes');
@@ -20,7 +20,7 @@
 		
 		public function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
 		    $joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
-		    $sort = 'ORDER BY ' . (strtolower($order) == 'random' ? 'RAND()' : "`ed`.`file` $order");
+		    $sort = 'ORDER BY ' . (in_array(strtolower($order), array('random', 'rand')) ? 'RAND()' : "`ed`.`file` $order");
 		}
 		
 		public function buildDSRetrivalSQL($data, &$joins, &$where, $andOperation = false) {
@@ -399,7 +399,6 @@
 		private static function __sniffMIMEType($file){
 			
 			$imageMimeTypes = array(
-				'image/bmp',
 				'image/gif',
 				'image/jpg',
 				'image/jpeg',
@@ -412,9 +411,8 @@
 		}
 		
 		public static function getMetaInfo($file, $type){
-			
+
 			$imageMimeTypes = array(
-				'image/bmp',
 				'image/gif',
 				'image/jpg',
 				'image/jpeg',
@@ -425,14 +423,9 @@
 			
 			$meta['creation'] = DateTimeObj::get('c', filemtime($file));
 			
-			if(in_array($type, $imageMimeTypes)){
-				include_once(TOOLKIT . '/class.image.php');
-				
-				$imageMeta = Image::meta($file);
-				
-				$meta['width'] = $imageMeta['width'];
-				$meta['height'] = $imageMeta['height'];
-								
+			if(in_array($type, $imageMimeTypes) && $array = @getimagesize($file)){
+				$meta['width']    = $array[0];
+				$meta['height']   = $array[1];
 			}
 			
 			return $meta;
@@ -440,7 +433,6 @@
 		}
 		
 
-		
 		function createTable(){
 			
 			return $this->_engine->Database->query(

@@ -43,6 +43,9 @@
 			}
 			
 			else{
+				
+				$bEven = false;
+				
 				foreach ($pages as $page) {
 					$page_title = $this->_Parent->resolvePageTitle($page['id']);
 					$page_url = URL . '/' . $this->_Parent->resolvePagePath($page['id']) . '/';
@@ -71,7 +74,9 @@
 						$col_types = Widget::TableData(__('None'), 'inactive');
 					}
 					
-					$aTableBody[] = Widget::TableRow(array($col_title, $col_url, $col_params, $col_types));
+					$aTableBody[] = Widget::TableRow(array($col_title, $col_url, $col_params, $col_types), ($bEven ? 'even' : NULL));
+					
+					$bEven = !$bEven;
 				}
 			}
 			
@@ -124,13 +129,11 @@
 					case 'saved':
 						$this->pageAlert(
 							__(
-								'%1$s updated at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>', 
+								'Page updated at %1$s. <a href="%2$s">Create another?</a> <a href="%3$s">View all Pages</a>', 
 								array(
-									__('Page'), 
 									DateTimeObj::get(__SYM_TIME_FORMAT__), 
 									URL . '/symphony/blueprints/pages/new/', 
-									URL . '/symphony/blueprints/pages/', 
-									__('Pages')
+									URL . '/symphony/blueprints/pages/' 
 								)
 							), 
 							Alert::SUCCESS);						
@@ -140,13 +143,11 @@
 					case 'created':
 						$this->pageAlert(
 							__(
-								'%1$s created at %2$s. <a href="%3$s">Create another?</a> <a href="%4$s">View all %5$s</a>', 
+								'Page created at %1$s. <a href="%2$s">Create another?</a> <a href="%3$s">View all Pages</a>', 
 								array(
-									__('Page'), 
 									DateTimeObj::get(__SYM_TIME_FORMAT__), 
 									URL . '/symphony/blueprints/pages/new/', 
-									URL . '/symphony/blueprints/pages/', 
-									__('Pages')
+									URL . '/symphony/blueprints/pages/' 
 								)
 							), 
 							Alert::SUCCESS);

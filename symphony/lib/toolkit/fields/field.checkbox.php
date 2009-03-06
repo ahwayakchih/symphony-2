@@ -3,7 +3,7 @@
 	Class fieldCheckbox extends Field {
 		function __construct(&$parent){
 			parent::__construct($parent);
-			$this->_name = 'Checkbox';
+			$this->_name = __('Checkbox');
 		}
 
 		function canToggle(){
@@ -46,7 +46,7 @@
 		}
 						
 		function getToggleStates(){
-			return array('yes' => 'Yes', 'no' => 'No');
+			return array('yes' => __('Yes'), 'no' => __('No'));
 		}
 		
 		function toggleFieldData($data, $newState){
@@ -57,18 +57,19 @@
 		function processRawFieldData($data, &$status, $simulate=false, $entry_id=NULL){
 			
 			$status = self::__OK__;
-			
+
 			return array(
-				'value' => ($data ? 'yes' : 'no')
+				'value' => (strtolower($data) == 'yes' ? 'yes' : 'no')
 			);
 			
 		}
-
+		
 		function buildSortingSQL(&$joins, &$where, &$sort, $order='ASC'){
 			$joins .= "INNER JOIN `tbl_entries_data_".$this->get('id')."` AS `ed` ON (`e`.`id` = `ed`.`entry_id`) ";
-			$sort = 'ORDER BY ' . (strtolower($order) == 'random' ? 'RAND()' : "`ed`.`value` $order");
+			$sort = 'ORDER BY ' . (in_array(strtolower($order), array('random', 'rand')) ? 'RAND()' : "`ed`.`value` $order");
 		}
-		
+
+
 		public function buildDSRetrivalSQL($data, &$joins, &$where, $andOperation = false) {
 			$field_id = $this->get('id');
 			$value = $this->cleanValue($data[0]);
@@ -122,8 +123,7 @@
 		}
 		
 		function prepareTableValue($data, XMLElement $link=NULL){
-			if(empty($data) || !isset($data['value'])) return ($this->get('default_state') == 'on' ? 'Yes' : 'No');
-			return parent::prepareTableValue(array('value' => ucfirst($data['value'])), $link);
+			return ($data['value'] == 'yes' ? __('Yes') : __('No'));
 		}
 
 		function isSortable(){

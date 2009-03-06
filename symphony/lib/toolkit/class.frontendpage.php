@@ -211,7 +211,22 @@
 			
 			if(is_array($this->_env['pool']) && !empty($this->_env['pool'])){
 				foreach($this->_env['pool'] as $handle => $p){
-					$this->_param[$handle] = @implode(', ', $p);
+		
+					if(!is_array($p)) $p = array($p);
+					foreach($p as $key => $value){
+						
+						if(is_array($value) && !empty($value)){
+							foreach($value as $kk => $vv){
+								$this->_param[$handle] .= @implode(', ', $vv) . ',';
+							}
+						}
+
+						else{
+							$this->_param[$handle] = @implode(', ', $p);
+						}
+					}
+					
+					$this->_param[$handle] = trim($this->_param[$handle], ',');
 				}
 			}
 			
