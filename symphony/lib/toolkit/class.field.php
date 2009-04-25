@@ -76,6 +76,7 @@
 			
 		// Abstract function
 		public function getToggleStates(){
+			return array();
 		}
 		
 		public function toggleFieldData($data, $newState){
@@ -300,7 +301,7 @@
 			$entry_id (optionsl) - Useful for identifying the current entry
 		
 		*/
-		public function processRawFieldData($data, &$status, $simulate=false, $entry_id=NULL){
+		public function processRawFieldData($data, &$status, &$message, $simulate=false, $entry_id=NULL){
 			
 			$status = self::__OK__;
 			
@@ -411,7 +412,7 @@
 			
 		}
 
-		public function buildLocationSelect($selected=NULL, $name='fields[location]', $label_value){
+		public function buildLocationSelect($selected=NULL, $name='fields[location]', $label_value=NULL){
 			if(!$label_value) $label_value = __('Placement');
 			$label = Widget::Label($label_value);
 			$options = array(

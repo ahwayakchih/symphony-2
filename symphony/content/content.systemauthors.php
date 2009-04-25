@@ -38,12 +38,12 @@
 			if(!is_array($authors) || empty($authors)){
 
 				$aTableBody = array(
-									Widget::TableRow(array(Widget::TableData(__('None found.'), 'inactive', NULL, count($aTableHead))))
+									Widget::TableRow(array(Widget::TableData(__('None found.'), 'inactive', NULL, count($aTableHead))), 'odd')
 								);
 			}
 
 			else{
-				$bEven = false;
+				$bOdd = true;
 				foreach($authors as $a){			
 
 					if(intval($a->get('superuser')) == 1) $group = 'admin'; else $group = 'author'; 
@@ -61,9 +61,9 @@
 					if($a->get('id') != $this->_Parent->Author->get('id')) $td3->appendChild(Widget::Input('items['.$a->get('id').']', NULL, 'checkbox'));
 					
 					## Add a row to the body array, assigning each cell to the row
-					$aTableBody[] = Widget::TableRow(array($td1, $td2, $td3), ($bEven ? 'even' : NULL));
+					$aTableBody[] = Widget::TableRow(array($td1, $td2, $td3), ($bOdd ? 'odd' : NULL));
 
-					$bEven = !$bEven;			
+					$bOdd = !$bOdd;			
 
 				}
 			}
@@ -241,14 +241,17 @@
 
 			$group->appendChild($div);
 					
-			$div = new XMLElement('div', NULL, array('class' => 'triple group'));
+			$div = new XMLElement('div');
 			if($this->_context[0] == 'edit') {
 				$div->setAttribute('id', 'change-password');
+				$div->setAttribute('class', 'triple group');
 
 				$label = Widget::Label(__('Old Password'));
 				if(isset($this->_errors['old-password'])) $label->setAttributeArray(array('class' => 'contains-error', 'title' => $this->_errors['old-password']));	
 				$label->appendChild(Widget::Input('fields[old-password]', NULL, 'password'));
 				$div->appendChild((isset($this->_errors['old-password']) ? $this->wrapFormElementWithError($label, $this->_errors['old-password']) : $label));
+			} else {
+				$div->setAttribute('class', 'group');
 			}
 
 			$label = Widget::Label(($this->_context[0] == 'edit' ? __('New Password') : __('Password')));		

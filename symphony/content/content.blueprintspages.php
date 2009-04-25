@@ -38,13 +38,13 @@
 			if (!is_array($pages) or empty($pages)) {
 				$aTableBody = array(Widget::TableRow(array(
 					Widget::TableData(__('None found.'), 'inactive', null, count($aTableHead))
-				)));
+				), 'odd'));
 				
 			}
 			
 			else{
 				
-				$bEven = false;
+				$bOdd = true;
 				
 				foreach ($pages as $page) {
 					$page_title = $this->_Parent->resolvePageTitle($page['id']);
@@ -74,9 +74,9 @@
 						$col_types = Widget::TableData(__('None'), 'inactive');
 					}
 					
-					$aTableBody[] = Widget::TableRow(array($col_title, $col_url, $col_params, $col_types), ($bEven ? 'even' : NULL));
+					$aTableBody[] = Widget::TableRow(array($col_title, $col_url, $col_params, $col_types), ($bOdd ? 'odd' : NULL));
 					
-					$bEven = !$bEven;
+					$bOdd = !$bOdd;
 				}
 			}
 			
@@ -299,7 +299,7 @@
 			$fieldset->appendChild((isset($this->_errors['title']) ? $this->wrapFormElementWithError($label, $this->_errors['title']) : $label));
 			
 			$label = Widget::Label(__('Body'));
-			$label->appendChild(Widget::Textarea('fields[body]', '25', '50', General::sanitize($fields['body']), array('class' => 'code')));
+			$label->appendChild(Widget::Textarea('fields[body]', 30, 80, General::sanitize($fields['body']), array('class' => 'code')));
 			$fieldset->appendChild((isset($this->_errors['body']) ? $this->wrapFormElementWithError($label, $this->_errors['body']) : $label));
 			
 			$this->Form->appendChild($fieldset);
@@ -319,8 +319,14 @@
 				$ul = new XMLElement('ul');
 				$ul->setAttribute('id', 'utilities');
 			
+				$i = 0;
 				foreach($utilities as $util){
 					$li = new XMLElement('li');
+
+					if ($i++ % 2 != 1) {
+						$li->setAttribute('class', 'odd');
+					}
+
 					$li->appendChild(Widget::Anchor($util, URL . '/symphony/blueprints/utilities/edit/' . str_replace('.xsl', '', $util) . '/', NULL));
 					$ul->appendChild($li);
 				}

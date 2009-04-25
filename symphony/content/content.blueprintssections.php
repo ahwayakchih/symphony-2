@@ -3,6 +3,7 @@
 	require_once(TOOLKIT . '/class.administrationpage.php');
  	require_once(TOOLKIT . '/class.sectionmanager.php');
  	require_once(TOOLKIT . '/class.fieldmanager.php');
+	require_once(TOOLKIT . '/class.entrymanager.php');
 
 	Class contentBlueprintsSections extends AdministrationPage{
 
@@ -29,6 +30,7 @@
 
 				array(__('Name'), 'col'),
 				array(__('Entries'), 'col'),
+				array(__('Navigation Group'), 'col'),	
 
 			);	
 
@@ -37,13 +39,13 @@
 			if(!is_array($sections) || empty($sections)){
 
 				$aTableBody = array(
-									Widget::TableRow(array(Widget::TableData(__('None found.'), 'inactive', NULL, count($aTableHead))))
+									Widget::TableRow(array(Widget::TableData(__('None found.'), 'inactive', NULL, count($aTableHead))), 'odd')
 								);
 			}
 
 			else{
 				
-				$bEven = false;
+				$bOdd = true;
 
 				foreach($sections as $s){
 					
@@ -52,13 +54,14 @@
 					## Setup each cell
 					$td1 = Widget::TableData(Widget::Anchor($s->get('name'), $this->_Parent->getCurrentPageURL() . 'edit/' . $s->get('id') .'/', NULL, 'content'));
 					$td2 = Widget::TableData(Widget::Anchor("$entry_count", URL . '/symphony/publish/' . $s->get('handle') . '/'));
+					$td3 = Widget::TableData($s->get('navigation_group'));
 				
-					$td2->appendChild(Widget::Input('items['.$s->get('id').']', 'on', 'checkbox'));
+					$td3->appendChild(Widget::Input('items['.$s->get('id').']', 'on', 'checkbox'));
 
 					## Add a row to the body array, assigning each cell to the row
-					$aTableBody[] = Widget::TableRow(array($td1, $td2), ($bEven ? 'even' : NULL));
+					$aTableBody[] = Widget::TableRow(array($td1, $td2, $td3), ($bOdd ? 'odd' : NULL));
 					
-					$bEven = !$bEven;
+					$bOdd = !$bOdd;
 
 				}
 			}
@@ -77,7 +80,8 @@
 			
 			$options = array(
 				array(NULL, false, __('With Selected...')),
-				array('delete', false, __('Delete'))
+				array('delete', false, __('Delete')),
+				array('delete-entries', false, __('Delete Entries'))
 			);
 
 			$tableActions->appendChild(Widget::Select('with-selected', $options));
@@ -111,16 +115,28 @@
 			$meta['entry_order'] = (isset($meta['entry_order']) ? $meta['entry_order'] : 'date');
 			$meta['subsection'] = (isset($meta['subsection']) ? 1 : 0);	
 			$meta['hidden'] = (isset($meta['hidden']) ? 'yes' : 'no');	
+			$meta['navigation_group'] = (isset($meta['navigation_group']) ? $meta['navigation_group'] : 'Content');
 
 			$fieldset = new XMLElement('fieldset');
 			$fieldset->setAttribute('class', 'settings');
 			$fieldset->appendChild(new XMLElement('legend', __('Essentials')));
 			
+			$div = new XMLElement('div', NULL, array('class' => 'group'));
+			
 			$label = Widget::Label('Name');
 			$label->appendChild(Widget::Input('meta[name]', $meta['name']));
 			
-			if(isset($this->_errors['name'])) $fieldset->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['name']));
-			else $fieldset->appendChild($label);	
+			if(isset($this->_errors['name'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['name']));
+			else $div->appendChild($label);
+			
+			
+			$label = Widget::Label('Navigation Group <i>Created if does not exist</i>');
+			$label->appendChild(Widget::Input('meta[navigation_group]', $meta['navigation_group']));
+			
+			if(isset($this->_errors['navigation_group'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['navigation_group']));
+			else $div->appendChild($label);
+			
+			$fieldset->appendChild($div);				
 			
 			$label = Widget::Label();
 			$input = Widget::Input('meta[hidden]', 'yes', 'checkbox', ($meta['hidden'] == 'yes' ? array('checked' => 'checked') : NULL));
@@ -272,11 +288,22 @@
 			$fieldset->setAttribute('class', 'settings');
 			$fieldset->appendChild(new XMLElement('legend', __('Essentials')));
 			
-			$label = Widget::Label(__('Name'));
+			$div = new XMLElement('div', NULL, array('class' => 'group'));
+			
+			$label = Widget::Label('Name');
 			$label->appendChild(Widget::Input('meta[name]', $meta['name']));
 			
-			if(isset($this->_errors['name'])) $fieldset->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['name']));
-			else $fieldset->appendChild($label);
+			if(isset($this->_errors['name'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['name']));
+			else $div->appendChild($label);
+			
+			
+			$label = Widget::Label('Navigation Group <i>Created if does not exist</i>');
+			$label->appendChild(Widget::Input('meta[navigation_group]', $meta['navigation_group']));
+			
+			if(isset($this->_errors['navigation_group'])) $div->appendChild(Widget::wrapFormElementWithError($label, $this->_errors['navigation_group']));
+			else $div->appendChild($label);
+			
+			$fieldset->appendChild($div);
 
 			$label = Widget::Label();
 			$input = Widget::Input('meta[hidden]', 'yes', 'checkbox', ($meta['hidden'] == 'yes' ? array('checked' => 'checked') : NULL));
@@ -356,6 +383,21 @@
 
 						redirect(URL . '/symphony/blueprints/sections/');
 						break;
+						
+					case 'delete-entries':
+
+						$entryManager = new EntryManager($this->_Parent);
+						foreach($checked as $section_id) {
+							$entries = $entryManager->fetch(NULL, $section_id, NULL, NULL, NULL, NULL, false, false);
+							$entry_ids = array();
+							foreach($entries as $entry) {
+								$entry_ids[] = $entry['id'];
+							}
+							$entryManager->delete($entry_ids);
+						}
+						
+						redirect(URL . '/symphony/blueprints/sections/');
+						break;
 				}
 			}
 						
@@ -373,7 +415,7 @@
 				$this->_errors = array();
 					
 				## Check to ensure all the required section fields are filled
-				if(!isset($meta['name']) || trim($meta['name']) == ''){
+				if(!isset($meta['name']) || strlen(trim($meta['name'])) == 0){
 					$required = array('Name');
 					$this->_errors['name'] = __('This is a required field.');
 					$canProceed = false;
@@ -384,7 +426,14 @@
 					$this->_errors['name'] = __('A Section with the name <code>%s</code> name already exists', array($meta['name']));
 					$canProceed = false;
 				}
-
+				
+				## Check to ensure all the required section fields are filled
+				if(!isset($meta['navigation_group']) || strlen(trim($meta['navigation_group'])) == 0){
+					$required = array('Navigation Group');
+					$this->_errors['navigation_group'] = __('This is a required field.');
+					$canProceed = false;
+				}				
+				
 				## Basic custom field checking
 				if(is_array($fields) && !empty($fields)){
 
@@ -461,11 +510,10 @@
 
 						        if($field_id){
 
-									## TODO: Fix me
 									###
-									# Delegate: Create
-									# Description: After creation of a new custom field. The ID is provided.
-									#$ExtensionManager->notifyMembers('Create', getCurrentPage(), array('field_id' => $field_id));			
+									# Delegate: FieldPostCreate
+									# Description: After creation of an Field. New Field object is provided.
+									$this->_Parent->ExtensionManager->notifyMembers('FieldPostCreate', '/blueprints/sections/', array('field' => &$field, 'data' => &$data));
 
 						        }
 							}
@@ -514,6 +562,13 @@
 				## Check for duplicate section handle
 				elseif($meta['name'] != $existing_section->get('name') && $this->_Parent->Database->fetchRow(0, "SELECT * FROM `tbl_sections` WHERE `name` = '" . $meta['name'] . " AND `id` != ' . $section_id . ' LIMIT 1")){
 					$this->_errors['name'] = __('A Section with the name <code>%s</code> name already exists', array($meta['name']));
+					$canProceed = false;
+				}
+
+				## Check to ensure all the required section fields are filled
+				if(!isset($meta['navigation_group']) || strlen(trim($meta['navigation_group'])) == 0){
+					$required = array('Navigation Group');
+					$this->_errors['navigation_group'] = __('This is a required field.');
 					$canProceed = false;
 				}
 
@@ -610,13 +665,12 @@
 								if($field->commit()){
 
 									$field_id = $field->get('id');
-									
-									## TODO: Fix Me
+
 									###
-									# Delegate: Create
-									# Delegate: Edit
-									# Description: After creation/editing of a new custom field. The ID is provided.
-									##$ExtensionManager->notifyMembers(($bEdit ? 'Edit' : 'Create'), getCurrentPage(), array('field_id' => $field_id));			
+									# Delegate: FieldPostCreate
+									# Delegate: FieldPostEdit
+									# Description: After creation/editing of an Field. New Field object is provided.
+									$this->_Parent->ExtensionManager->notifyMembers(($bEdit ? 'FieldPostEdit' : 'FieldPostCreate'), '/blueprints/sections/', array('field' => &$field, 'data' => &$data));
 
 								}
 							}
