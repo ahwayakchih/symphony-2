@@ -21,9 +21,6 @@
 			$this->addElementToHead(new XMLElement('meta', NULL, array('http-equiv' => 'Content-Type', 'content' => 'text/html; charset=UTF-8')), 0);
 			$this->addElementToHead(new XMLElement('link', NULL, array('rel' => 'icon', 'href' => URL.'/symphony/assets/images/bookmark.png', 'type' => 'image/png')), 20); 		
 			$this->addStylesheetToHead(URL . '/symphony/assets/login.css', 'screen', 40);
-			$this->addElementToHead(new XMLElement('!--[if IE]><link rel="stylesheet" href="'.URL.'/symphony/assets/legacy.css" type="text/css"><![endif]--'), 50);
-			$this->addScriptToHead(URL . '/symphony/assets/admin.js', 60);		
-			
 			
 			$this->setTitle(__('%1$s &ndash; %2$s', array(__('Symphony'), __('Login'))));
 				
@@ -64,6 +61,8 @@
 
 					$label = Widget::Label(__('Email Address'));
 					$label->appendChild(Widget::Input('email', $_POST['email']));
+
+					$this->Body->setAttribute('onload', 'document.forms[0].elements.email.focus()');
 
 					if(isset($this->_email_sent) && !$this->_email_sent){
 						$div = new XMLElement('div', NULL, array('class' => 'invalid'));					
@@ -117,11 +116,11 @@
 				$label->appendChild(Widget::Input('username'));
 				$fieldset->appendChild($label);
 
-				
+				$this->Body->setAttribute('onload', 'document.forms[0].elements.username.focus()');
+
 				$label = Widget::Label(__('Password'));
 				$label->appendChild(Widget::Input('password', NULL, 'password'));
-				
-				
+
 				if($this->_invalidPassword){
 					$div = new XMLElement('div', NULL, array('class' => 'invalid'));					
 					$div->appendChild($label);

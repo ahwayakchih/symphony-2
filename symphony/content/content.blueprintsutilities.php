@@ -99,7 +99,7 @@
 			$fieldset->appendChild((isset($this->_errors['name']) ? $this->wrapFormElementWithError($label, $this->_errors['name']) : $label));
 
 			$label = Widget::Label(__('Body'));
-			$label->appendChild(Widget::Textarea('fields[body]', 25, 50, $fields['body'], array('class' => 'code')));
+			$label->appendChild(Widget::Textarea('fields[body]', 30, 80, $fields['body'], array('class' => 'code')));
 			$fieldset->appendChild((isset($this->_errors['body']) ? $this->wrapFormElementWithError($label, $this->_errors['body']) : $label));
 			
 			$this->Form->appendChild($fieldset);
@@ -118,9 +118,15 @@
 				
 				$ul = new XMLElement('ul');
 				$ul->setAttribute('id', 'utilities');
-			
+
+				$i = 0;
 				foreach($utilities as $util){
 					$li = new XMLElement('li');
+
+					if ($i++ % 2 != 1) {
+						$li->setAttribute('class', 'odd');
+					}
+
 					$li->appendChild(Widget::Anchor($util, URL . '/symphony/blueprints/utilities/edit/' . str_replace('.xsl', '', $util) . '/', NULL));
 					$ul->appendChild($li);
 				}
