@@ -466,8 +466,8 @@
 		}
 
 		private function _mysql_escape($query){
-			// Following line changes MySQL type of escape (\') to sqlite way (''),
-			// and changes MySQL's backticks to SQLite's square brackets.
+			// Change MySQL's type of escape (\') to sqlite's way (''),
+			// and MySQL's backticks to SQLite's square brackets.
 			$query = preg_replace_callback('/(?<!\\\\)([\'"])([\w\W]*)((?<!\\\\)\1)/U', array($this, '_mysql_escape_quotes'), $query);
 			return trim(str_replace('\`', '`', preg_replace('/([^\\\\])`([^`]+)`/', '$1[$2]', $query)));
 		}
