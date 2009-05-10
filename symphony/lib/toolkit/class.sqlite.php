@@ -140,6 +140,7 @@
 			// Register emulated functions
 			sqlite_create_function($this->_connection['rsrc'], 'MD5', array($this, 'mysql_md5'), 1);
 			sqlite_create_function($this->_connection['rsrc'], 'UNIX_TIMESTAMP', array($this, 'mysql_unix_timestamp'));
+			sqlite_create_function($this->_connection['rsrc'], 'FROM_UNIXTIME', array($this, 'mysql_from_unix_timestamp'), 1);
 
 			// Make sure we don't have to convert column names, because SQLite by default does not simplify them, like MySQL does
 			// (so things like "SELECT table.column" or "SELECT table.'column'" return as $row["table.column"] or $row["table.'column'"]).
@@ -433,6 +434,10 @@
 			return time();
 		}
 
+		public function mysql_from_unix_timestamp($s) {
+			return date("Y-m-d H:i:s", $s);
+		}
+
 		// MySQL query translation
 
 		// This one is used only as callback for preg_replace_callback!
@@ -532,7 +537,7 @@
 			$query = preg_replace($find, $rplc, $query);
 
 			// Add INDEX for UNIQUE, FULLTEXT and other KEYs
-			if (preg_match_all('/,?\s+(UNIQUE|FULLTEXT|) KEY\s+(\[?[^\[\(\]]+\]?)\s+\(([^\)]+)\),?/iU', $query, $m)) {
+			if (preg_match_all('/,?\s+(UNIQUE\s+|FULLTEXT\s+|)KEY\s+(\[?[^\[\(\]]+\]?)\s+\(([^\)]+)\),?/iU', $query, $m)) {
 				if(empty($tableName)) preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName);
 				for ($i = 0; $i < count($m[2]); $i++) {
 					$query = str_replace($m[0][$i], '', $query);
