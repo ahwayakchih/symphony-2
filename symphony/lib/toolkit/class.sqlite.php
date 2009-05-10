@@ -141,6 +141,8 @@
 			sqlite_create_function($this->_connection['rsrc'], 'MD5', array($this, 'mysql_md5'), 1);
 			sqlite_create_function($this->_connection['rsrc'], 'UNIX_TIMESTAMP', array($this, 'mysql_unix_timestamp'));
 			sqlite_create_function($this->_connection['rsrc'], 'FROM_UNIXTIME', array($this, 'mysql_from_unix_timestamp'), 1);
+			sqlite_create_function($this->_connection['rsrc'], 'RAND', array($this, 'mysql_rand'));
+			sqlite_create_function($this->_connection['rsrc'], 'REGEXP', array($this, 'mysql_regexp'), 2);
 
 			// Make sure we don't have to convert column names, because SQLite by default does not simplify them, like MySQL does
 			// (so things like "SELECT table.column" or "SELECT table.'column'" return as $row["table.column"] or $row["table.'column'"]).
@@ -231,9 +233,13 @@
 
 			// Strip MySQL comments
 			// TODO: this does not remove comments between separate queries, e.g., "DELETE FROM ...; --COMMENT DELETE FROM ...;"
-			while (preg_match('/^\s*\-\-/', $query)) {
+			while(preg_match('/^\s*\-\-/', $query)){
 				$query = preg_replace('/^\s*\-\-[^\n]+\n/', "\n", $query);
 			}
+
+			// TODO: reqrite REGEXP keyword for SQLite < 3.2.2, so "something REGEXP pattern" becomes "REGEXP(something, pattern)"
+			//if(version_compare($this->_client_info, '3.2.2', '<')){
+			//}
 
 			// TODO: check for subqueries and translate them too?
 			if(preg_match('/^(create|drop|alter|insert|replace|update|select|delete|show|optimize|truncate|set)\s/i', trim($query), $m)){
@@ -438,6 +444,15 @@
 			return date("Y-m-d H:i:s", $s);
 		}
 
+		public function mysql_regexp($data, $pattern) {
+			if(preg_match($pattern, $data, $m)) return $m[0];
+			else return false;
+		}
+
+		public function mysql_rand() {
+			return rand();
+		}
+
 		// MySQL query translation
 
 		// This one is used only as callback for preg_replace_callback!
@@ -498,7 +513,7 @@
 			$tableName = array();
 			$noError = false;
 
-			if($this->_client_info < 3.3 && preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName)) {
+			if(version_compare($this->_client_info, '3.3', '<') && preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)([^\(\s]+)\s+(?:LIKE\s+|\()/iU', $query, $tableName)) {
 				if($this->_table_exists($tableName[1])) return true;
 
 				$query = preg_replace('/^CREATE\s+(TEMPORARY\s+|)TABLE\s+IF NOT EXISTS\s+/iU', 'CREATE $1 TABLE ', $query);
@@ -533,7 +548,7 @@
 			);
 
 			// Newer SQLite have additional autoincrement option which works more like the one from MySQL
-			if ($this->_client_info >= 3.1) $rplc[1] .= ' autoincrement';
+			if (version_compare($this->_client_info, '3.1', '>=')) $rplc[1] .= ' autoincrement';
 			$query = preg_replace($find, $rplc, $query);
 
 			// Add INDEX for UNIQUE, FULLTEXT and other KEYs
@@ -587,7 +602,7 @@
 
 			if(trim($m[1])) return false; // AFAIK SQLite does not have a way to drop temporary table, except for closing and reopening connection ;/
 
-			$noError = ($this->_client_info < 3.3 && trim($m[2]) ? true : false);
+			$noError = (version_compare($this->_client_info, '3.3', '<') && trim($m[2]) ? true : false);
 
 			$queries = array();
 			foreach(explode(',', $m[3]) as $n){
