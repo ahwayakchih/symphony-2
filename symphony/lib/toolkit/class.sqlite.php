@@ -237,9 +237,13 @@
 				$query = preg_replace('/^\s*\-\-[^\n]+\n/', "\n", $query);
 			}
 
-			// TODO: reqrite REGEXP keyword for SQLite < 3.2.2, so "something REGEXP pattern" becomes "REGEXP(something, pattern)"
-			//if(version_compare($this->_client_info, '3.2.2', '<')){
-			//}
+			// Rewrite REGEXP keyword for SQLite < 3.2.2, so "something REGEXP pattern" becomes "REGEXP(something, pattern)"
+			if(version_compare($this->_client_info, '3.2.2', '<')){
+				// TODO: this is kinda fragile. If some text value contains example of REGEXP usage in SQL, it will be rewritten :(.
+				//		Maybe before any other rewrites, we should extract all values first, put placeholder tokens,
+				//		do rewrites and put values back, just before SQL is executed?
+				$query = preg_replace('/(WHERE|AND|OR|,)\s+(([\'"])[^\\3]+\\3|[^\s\'"]+)\s+REGEXP\s+(([\'"])[^\\5]+\\5|[^\s\'"]+)/', '\\1 REGEXP(\\2, \\4)', $query);
+			}
 
 			// TODO: check for subqueries and translate them too?
 			if(preg_match('/^(create|drop|alter|insert|replace|update|select|delete|show|optimize|truncate|set)\s/i', trim($query), $m)){
@@ -445,7 +449,7 @@
 		}
 
 		public function mysql_regexp($data, $pattern) {
-			if(preg_match($pattern, $data, $m)) return $m[0];
+			if(preg_match($pattern, $data, $m)) return true; //$m[0]; // Does not work when returning matched string :(.
 			else return false;
 		}
 
