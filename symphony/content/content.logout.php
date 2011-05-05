@@ -1,24 +1,20 @@
 <?php
-	
+	/**
+	 * @package content
+	 */
+	/**
+	 * The default Logout page will redirect the user
+	 * to the Homepage of `URL`
+	 */
 	Class contentLogout extends HTMLPage{
-		
-		var $_Parent;
-		
-		function __construct(&$parent){
-			parent::__construct();
-			
-			$this->_Parent = $parent;
-		}
 
-		function build(){
+		public function build(){
 			$this->view();
 		}
 	
-		function view(){
-			$this->_Parent->logout();
+		public function view(){
+			Administration::instance()->logout();
 			redirect(URL);
 		}
 	
 	}
-	
-?>

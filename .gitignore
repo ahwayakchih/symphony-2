@@ -1,5 +1,11 @@
+._*
+.Apple*
 .DS_Store
 *config.php
 .htaccess
-symphony/.htaccess
 workspace/
+manifest/
+*.esproj
+*~
+*.geany
+install-log.txt

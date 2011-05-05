@@ -9,7 +9,7 @@
 	$Page->Html->setDTD('<!DOCTYPE html>');
 	$Page->Html->setAttribute('xml:lang', 'en');
 	$Page->addElementToHead(new XMLElement('meta', NULL, array('http-equiv' => 'Content-Type', 'content' => 'text/html; charset=UTF-8')), 0);
-	$Page->addElementToHead(new XMLElement('link', NULL, array('rel' => 'icon', 'href' => URL.'/symphony/assets/images/bookmark.png', 'type' => 'image/png')), 20); 
+	$Page->addStylesheetToHead(URL . '/symphony/assets/basic.css', 'screen', 30);
 	$Page->addStylesheetToHead(URL . '/symphony/assets/error.css', 'screen', 30);
 
 	$Page->addHeaderToPage('HTTP/1.0 500 Server Error');
@@ -27,7 +27,7 @@
 
 	$errors_grouped = array();
 
-	list($key, $val) = $additional['proc']->getError(false, true);
+	list($key, $val) = $e->getAdditional()->proc->getError(false, true);
 
 	do{
 		
@@ -44,7 +44,7 @@
 			$errors_grouped['general'][] = $val;
 		}
 				
-	}while(list($key, $val) = $additional['proc']->getError());
+	}while(list($key, $val) = $e->getAdditional()->proc->getError());
 
 	$query_string = General::sanitize($Page->__buildQueryString());
 	if(strlen(trim($query_string)) > 0) $query_string = "&amp;{$query_string}";
