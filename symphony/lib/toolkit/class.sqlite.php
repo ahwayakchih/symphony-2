@@ -139,6 +139,8 @@
 
 			// Register emulated functions
 			sqlite_create_function($this->_connection['rsrc'], 'MD5', array($this, 'mysql_md5'), 1);
+			sqlite_create_function($this->_connection['rsrc'], 'SHA', array($this, 'mysql_sha1'), 1);
+			sqlite_create_function($this->_connection['rsrc'], 'SHA1', array($this, 'mysql_sha1'), 1);
 			sqlite_create_function($this->_connection['rsrc'], 'UNIX_TIMESTAMP', array($this, 'mysql_unix_timestamp'));
 			sqlite_create_function($this->_connection['rsrc'], 'FROM_UNIXTIME', array($this, 'mysql_from_unix_timestamp'), 1);
 			sqlite_create_function($this->_connection['rsrc'], 'RAND', array($this, 'mysql_rand'));
@@ -437,6 +439,10 @@
 
 		public function mysql_md5($s){
 			return md5($s);
+		}
+
+		public function mysql_sha1($s){
+			return sha1($s);
 		}
 
 		public function mysql_unix_timestamp($s = NULL){
